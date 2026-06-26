@@ -1,0 +1,8 @@
+*.key
+*.sk
+*.pw
+.wallet_pw
+*.env
+__pycache__/
+*.pyc
+.DS_Store
