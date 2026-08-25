@@ -16,15 +16,19 @@ a Genesis session alive.
 
 ## Layout
 
-The entire project is four files at the repository root. There are no packages, subdirectories,
+The entire project is five files at the repository root. There are no packages, subdirectories,
 build system, or CI.
 
 | File | Role |
 |---|---|
-| `eho6_node.py` | The edge-node daemon. ~610 lines, single file, stdlib only. |
+| `eho6_node.py` | The edge-node daemon. 610 lines, single file, stdlib only. |
 | `install.sh` | Bootstrap: keygen → admission → download daemon → autostart. Bash, `set -euo pipefail`. |
 | `README.md` | User-facing protocol overview and install instructions. |
+| `CLAUDE.md` | This file. Repo-local guidance; not shipped to users. |
 | `.gitignore` | Guards secrets (`*.key`, `*.sk`, `*.pw`, `.wallet_pw`, `*.env`). |
+
+Only `eho6_node.py` and `install.sh` are deployed (see **Publishing**). The two Markdown files
+stay in the repo.
 
 `eho6_node.py` is organized as banner-commented sections in this order: constants → pure-Python
 Ed25519 → `NodeState` → logging → HTTP client helpers → Genesis session management → FraktalToken
