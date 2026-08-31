@@ -65,16 +65,38 @@ već postoji u atmosferi.
 Faze: 0 validacija → 1 hardverski prototip → 2 RSSI key derivation →
 3 integracija s Ed25519 (fallback, **ne** zamjena) i EHO7 relayem → 4 rollout na flotu.
 
-### Otvoreno pitanje za Fazu 0
+### Faza 0 — izmjereni payload
 
-BORG health JSON iz `_handle_health` je ~320 bajtova. To ne stane u LoRa paket
-(max 255 B) i skupo je po airtimeu: 320 B na SF9/125 kHz traje 1,25 s, što uz
-1% duty-cycle znači jedan heartbeat svake ~2 minute; na SF12 je 9 s po paketu i
-razmak ~15 minuta. Kompaktan 32-bajtni paket na SF9 traje 247 ms → heartbeat
-svakih ~25 s.
+Mjereno na EU čvoru, `/var/www/genesis/borg/health.json`: **3776 bajtova**.
+(Ranija procjena od ~320 B bila je izvedena iz `_handle_health` u `eho6_node.py`,
+što je edge daemon, a ne ono što flota stvarno objavljuje.)
+
+Payload piše `services/health_writer.py`, ali ga **ne oblikuje** — writer je proxy
+koji dohvaća `http://127.0.0.1:8010/api/v1/borg/self`, promovira `KLJUCEVI` iz
+`ja` na top razinu i atomarno zapisuje cijeli odgovor. Veličinu dakle diktira API,
+ne writer; trimanje writera ne bi ništa riješilo. Većinu težine nose `tisina`,
+`ocekivano_odsutni` i `_opp_seal` blokovi.
+
+Napomena: `services/borg_health_writer.py` piše bitno manji, plosnati dict s
+`indent=2` i `peers_poznati` kao broj. Živi health.json je jednoredni i ima
+`verzija`/`tisina`/`peers_*` kao liste — dakle **aktivan je `health_writer.py`**,
+a `borg_health_writer.py` je zaostatak. Ne graditi na njemu.
+
+Airtime za 3776 B (LoRa max 255 B → 15 fragmenata, 125 kHz, CR 4/5):
+
+| SF | ukupan airtime | razmak uz ETSI 1% |
+|---|---|---|
+| SF7 | 5,99 s | ~10 min |
+| SF9 | 18,75 s | ~31 min |
+| SF12 | 135,3 s | ~226 min |
+
+Jezgra koju `flota_status` stvarno čita (`agent_id`, `stanje`, `dok_count`,
+`lanac_visina`, `disk_free_pct`, `vrijeme`) je 154 B kao JSON i stane u 32-bajtni
+binarni okvir. Na SF9 to je 247 ms → heartbeat svakih ~25 s.
 
 Prijedlog: MESH-RF heartbeat graditi na postojećem 32-bajtnom `FraktalToken`
-formatu umjesto na JSON-u, uz dokumentirano mapiranje BORG polja.
+formatu, uz dokumentirano mapiranje te jezgre. Puni health.json ostaje na HTTP
+pullu — RF sloj nosi samo ono po čemu se provjerava konsenzus.
 
 ## Konvencije
 
