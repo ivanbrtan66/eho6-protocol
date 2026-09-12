@@ -1,8 +1,9 @@
 # MASKA — pet faza uklanjanja SPOF-a iz adresne indirekcije
 
-> Status ovog dokumenta: **F1 i F2 izgrađeni i testirani. F3 izgrađen kao alat, pilot
-> još nije pušten. F4 i F5 nisu izgrađeni.** Gdje piše "nije izgrađeno", to znači
-> da koda nema — ne da je "skoro gotovo".
+> Status ovog dokumenta: **F1, F2 i F4 izgrađeni i testirani. F3 izgrađen kao alat,
+> pilot još nije pušten. F5 nije izgrađen.** Gdje piše "nije izgrađeno", to znači
+> da koda nema — ne da je "skoro gotovo". Gdje piše "dokazano", stoji test koji se
+> može ponovno pokrenuti; gdje dokaza nema, piše što točno nedostaje.
 > Nastavak na `c1570_maska_protokol_nacrt` (DRAFT, prior-art timestamp).
 
 ---
@@ -113,16 +114,62 @@ mapiranje otvorenim jeftinije od svakog nadzora.
 Zašto dva sidra: `medijapos` danas nema rezervni put. Jedan tunel prema jednom
 sidru je jedna točka kvara.
 
-### F4 — direktan probod (ICE/STUN rendezvous) ❌ nije izgrađeno
+### F4 — PROBOD: direktan probod NAT-a ✅ izgrađeno, ⏳ pilot na terenu nije pušten
 
-Ovo je faza koja **ubija SPOF**: sidro radi rendezvous, klijenti probiju NAT, promet
-ide peer-to-peer. Sidro tada zna samo *tko postoji*, ne i *što se prenosi*, i pad
-sidra ne ruši vezu. Tek tada Fasada prestaje biti jedina dodirna točka.
+`maska/stun.py`, `maska/susret.py`, `maska/probod.py`.
 
-Nije izgrađeno i nije trivijalno: treba ICE kandidate, STUN, i fallback za simetrični
-NAT (gdje probod ne radi i sidro ostaje relej). **F3 bez F4 samo premješta
-ovisnost** — s `ssh -R` na WireGuard sidro. To je manje krhka ovisnost, ali je
-ovisnost.
+Ovo je faza koja **ukida** SPOF, a ne premješta ga: nakon proboda promet ide
+peer-to-peer, sidro zna samo *tko postoji*, i njegov pad više ne ruši uspostavljenu
+vezu.
+
+**Redoslijed, i zašto baš takav:**
+
+1. **Izmjeri prije nego probaš.** Ponašanje mapiranja NAT-a odlučuje je li probod
+   uopće moguć:
+   - **EIM** — isto vanjsko mapiranje bez obzira na odredište → adresa koju vidi
+     sidro EU vrijedi i za peera → probod moguć.
+   - **EDM (simetrični NAT)** — novi port po odredištu → adresa koju vidi sidro ne
+     vrijedi ni za koga drugog → **probod nemoguć**, sidro ostaje relej.
+   Mjerenje traži **dvije točke gledanja na različitim IP adresama** — a to je točno
+   dvo-sidrena postava iz F3. S jednim sidrom rezultat je `NEPOZNATO`; "vjerojatno
+   EIM" nije mjerenje. Sidro vozi **vlastiti STUN**: javni STUN vidio bi tko i kada
+   traži probod, a taj metapodatak ne mora napustiti flotu.
+2. **Oglas.** Svaka strana objavi potpisane kandidate (Ed25519, pinovani ključ,
+   `ts` + `nonce` protiv ponavljanja). Sidro je **oglasna ploča, ne prolaz** — nema
+   rutu koja prenosi teret, i test `test_nema_releja` to drži tako.
+3. **Istovremeni probod** s istog socketa s kojeg je mjereno mapiranje. Izlazna
+   proba otvara NAT mapiranje, tuđa proba ulazi kroz njega.
+4. **Nominacija.** Par potvrđen **u oba smjera** s najmanjim RTT-om. Upravljačka
+   strana je leksikografski manje ime — bez pregovora koji može zapeti.
+5. **Predaja WireGuardu** (neobavezno): `wg set … endpoint`, pa provjera da se
+   `latest-handshakes` **stvarno pomaknuo**. Ako se ne pomakne, endpoint se vraća na
+   sidro i ishod je `RELEJ`. Uspjeh je pomak handshakea, nikad izostanak greške.
+
+**Što sidro može, a što ne može slagati.** Sidro može objaviti lažan kandidat i time
+**spriječiti** vezu, ali ne i ući u nju: WireGuard autentificira ključem a ne adresom,
+a MASKA probe su potpisane Ed25519 ključem peera. Laž sidra je napad na dostupnost,
+nikad na tajnost.
+
+**Što je dokazano (`tests/test_probod.py`, NAT simulator po RFC 4787 razredima):**
+
+| Postava | Očekivano | Dokazano |
+|---|---|---|
+| EIM + ADF ↔ EIM + ADF | probod uspijeva, par dvosmjerno potvrđen | ✅ |
+| EIM + EIF ↔ EIM + EIF | uspijeva | ✅ |
+| EDM na jednoj strani | `RELEJ` bez ijedne poslane probe (< 1 s) | ✅ |
+| EDM, a kodu **slažemo** da je EIM | probod svejedno pada; presuda `RELEJ` | ✅ |
+| EDM + potpuno otvoren filtar (EIF) | i dalje pada — potvrda stiže s **drugog** porta | ✅ |
+| peer prima ali ne odgovara | `RELEJ`, nikad `NEPOSREDAN` | ✅ |
+| krivotvorena proba (tuđi ključ) | ignorirana | ✅ |
+| ponovljena proba (isti nonce) | ne broji se dvaput | ✅ |
+| predaja WireGuardu bez pomaka handshakea | vraćanje na sidro + `RELEJ` | ✅ |
+
+Peti red je najvažniji: bez njega bi "RELEJ kod simetričnog NAT-a" bio samo
+poštovanje vlastite zastavice, a ne činjenica o mreži.
+
+**Što NIJE dokazano:** da ISP-ov CGNAT kod tebe ima baš to ponašanje. Simulator
+modelira razrede iz RFC 4787, ne konkretnu kutiju tvog operatera. To je pilot na
+terenu, isto kao F3.
 
 ### F5 — K-od-N oglasnik ❌ nije izgrađeno, i možda se ne smije graditi
 
@@ -151,6 +198,19 @@ Ostale poznate granice:
 - **GODOVI nisu usidreni u lanac.** Lanac hasheva otkriva naknadnu izmjenu lokalno;
   netko s pristupom datoteci može prepisati **cijeli** dnevnik od nule. Usidrenje
   posljednjeg hasha u Genesis lanac rješava to i nije izgrađeno.
+
+Granice F4 posebno:
+
+- **Nema TURN releja** (RFC 5766). "Relej" ovdje znači postojeći RIZOM tunel kroz
+  sidro (F3), ne TURN.
+- **Nije pun ICE** (RFC 8445): nema parova kandidata po prioritetu, agresivne
+  nominacije ni IPv6 kandidata. ICE-lite s jednim pravilom nominacije.
+- **MASKA-in socket za probod nije WireGuardov socket.** Mapiranje koje smo izmjerili
+  vrijedi za naš port, a WireGuard ima svoj. Endpoint koji se predaje peeru je onaj
+  koji **sidro opaža** za WireGuard peera — a to peer ne može kriptografski provjeriti
+  (vidi gore: može spriječiti vezu, ne ući u nju). Zato se predaja dokazuje pomakom
+  handshakea, ne vjerom u sidro.
+- **Simetrični NAT nije riješen i ne može biti** ovom fazom — tu ostaje F3 relej.
 
 ---
 
@@ -188,7 +248,9 @@ već čita: `stanje` (`ok` / `alarm` / `NEPOZNATO`), `vatre[].razlog`,
 mijenjan ne smije izgledati zdravo.
 
 Mjereno na ovom stroju: potpis 4 ms, verifikacija 4 ms, cijelo razrješenje s PULL-om
-14 ms. Pure-Python kripto ovdje nije usko grlo.
+14 ms. Pure-Python kripto ovdje nije usko grlo. Cijeli paket: **215 testova**, samo
+standardna biblioteka, bez izlaza na internet (sidra i NAT-ovi su na loopbacku
+odnosno u simulatoru).
 
 ---
 
@@ -229,6 +291,31 @@ watchdog alarma na `medijapos-rizom`, uz oba puta mjerena paralelno. Prvo
 očekivano stanje je `NEPOZNATO — ceka prvo prikljucenje`; watchdog sam briše tu
 zastavicu na prvi OK (c2404). **Ako pilot preživi tjedan, tada ime. Prije toga
 samo mjerenje.**
+
+**F4 — probod (nakon što RIZOM stoji):**
+
+```bash
+# 1. na OBA sidra (dvije točke gledanja su uvjet za mjerenje NAT-a)
+#    /var/lib/maska/susret.json: imena[<ime>].pk + drugo_sidro_stun = IP drugog sidra
+sudo python3 -m maska.susret --provjeri-konfig
+sudo python3 -m maska.susret
+
+# 2. na rubu: izmjeri prije nego išta tvrdiš
+python3 -m maska.stun izmjeri \
+    --sidro genesis.limit-connect.com:3478 --sidro fina-connect.online:3478
+#    EIM  -> probod je moguć
+#    EDM  -> nije; sidro ostaje relej. Ovo je mjerenje, ne kvar.
+
+# 3. probod prema peeru
+python3 -m maska.probod --ime x96 --kljuc ~/.eho6/node.key \
+    --peer tonka --peer-pk <64 hex> \
+    --sidro https://genesis.limit-connect.com/susret \
+    --sidro https://fina-connect.online/susret \
+    --stun genesis.limit-connect.com:3478 --stun fina-connect.online:3478 \
+    --wg-sucelje rizom-eu --wg-nas-pk <wg pubkey> --wg-relej 217.160.71.124:51820 \
+    --godovi /var/lib/maska/godovi.jsonl
+# izlaz 0 = NEPOSREDAN · 1 = RELEJ · 2 = NEPOZNATO (mjerenje nije dovršeno)
+```
 
 `dnkd` je odvojena instalacija i ne ovisi o F3:
 
@@ -273,6 +360,11 @@ Tvrdnja bez uvjeta pod kojim pada je marketing. Ovi uvjeti ruše dio gradnje:
    dva imenika su pregrešna za produkciju i PELUD ostaje samo objava, ne put.
 4. **Ako `.dnk` ime traži instalaciju CA** da bi bilo iskoristivo → F2 je za
    korisnika neto šteta i staje.
+5. **Ako na stvarnim rubnim uređajima mjerenje pokaže EDM** (simetrični NAT) →
+   F4 na tom uređaju ne donosi ništa i sidro ostaje relej; gradnja staje dok se ne
+   promijeni operater ili oprema.
+6. **Ako probijena veza pada češće nego relej kroz sidro** kroz tjedan paralelnog
+   mjerenja → F4 je pogoršanje i vraća se na F3 put.
 
 ---
 

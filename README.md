@@ -129,7 +129,7 @@ state, known limits and falsification criteria): [`docs/MASKA-FAZE.md`](docs/MAS
 | **F1 PELUD** | Signed, expiring locator record — extends the existing GENESIS1 DNS TXT format | **built** (`maska/pelud.py`) |
 | **F2 `dnkd`** | Local `.dnk` resolver: PULL + Ed25519 verify + split-brain check + stable RFC 6598 address | **built** (`maska/dnkd.py`) |
 | **F3 RIZOM** | Dual-anchor WireGuard replacing single `ssh -R` reverse tunnels | **tooling built**, pilot not yet deployed |
-| **F4 Direct punch** | ICE/STUN rendezvous, peer-to-peer traffic — the phase that actually removes the SPOF | **not built** |
+| **F4 PROBOD** | Own STUN + signed rendezvous board + simultaneous punch, then WireGuard endpoint handover — the phase that actually removes the SPOF | **built**, field pilot pending |
 | **F5 K-of-N board** | N registrars / TLDs / jurisdictions, K-of-N consensus | **not built** (costs SEO reach — conditional) |
 
 ### PELUD record
@@ -189,6 +189,39 @@ port, so no existing site (and no other domain on that server) is modified, and 
 old `ssh -R` path keeps running and being measured in parallel. Every script backs
 up before it writes and has a documented one-command rollback.
 
+### PROBOD — direct punch (F4)
+
+Measure before you claim. NAT mapping behaviour decides whether a punch is possible at
+all, and measuring it needs **two vantage points on different IP addresses** — which is
+exactly the dual-anchor setup from F3. Each anchor runs its own STUN, so the fleet does
+not depend on a public one (a public STUN sees who asks for a punch, and when).
+
+```bash
+# on BOTH anchors: rendezvous board + STUN in one process
+sudo python3 -m maska.susret --provjeri-konfig && sudo python3 -m maska.susret
+
+# on the edge: measure first
+python3 -m maska.stun izmjeri \
+        --sidro genesis.limit-connect.com:3478 --sidro fina-connect.online:3478
+#   EIM -> punch possible     EDM (symmetric) -> not possible, relay stays
+
+# then punch
+python3 -m maska.probod --ime x96 --kljuc ~/.eho6/node.key \
+        --peer tonka --peer-pk <64 hex> \
+        --sidro https://genesis.limit-connect.com/susret \
+        --sidro https://fina-connect.online/susret \
+        --stun genesis.limit-connect.com:3478 --stun fina-connect.online:3478 \
+        --wg-sucelje rizom-eu --wg-relej 217.160.71.124:51820
+# exit 0 = direct · 1 = relay · 2 = measurement incomplete
+```
+
+The rendezvous service has **no route that carries payload** — it is a board, not a
+passage; a test asserts that and fails if one ever appears. The anchor can publish a
+false candidate and thereby *prevent* a connection, but it cannot enter one: WireGuard
+authenticates by key, not by address, and probes are Ed25519-signed. Handover to
+WireGuard counts as successful only when `latest-handshakes` actually moves; otherwise
+the endpoint is reverted to the anchor and the verdict is `RELEJ`.
+
 ### GODOVI measurement ledger
 
 Every resolution — successful, failed, or unmeasurable — is appended as a
@@ -200,10 +233,13 @@ python3 -m maska.godovi /var/lib/maska/godovi.jsonl
 
 ### Tests
 
-134 tests, standard library only, no network egress (anchors run on loopback).
+215 tests, standard library only, no network egress (anchors run on loopback, NAT
+behaviour in a simulator).
 Ed25519 is checked against RFC 8032 §7.1 vectors, X25519 against RFC 7748 §5.2 and
 cross-checked against `openssl`, and interoperability with `eho6_node.py` signatures
-is asserted:
+is asserted. The NAT simulator models RFC 4787 mapping/filtering classes and proves
+the *failure* cases too — a punch through a symmetric NAT fails even when the code is
+told the NAT is EIM:
 
 ```bash
 ./tests/pokreni_sve.sh

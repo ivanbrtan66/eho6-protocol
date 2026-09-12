@@ -665,9 +665,10 @@
         <p>The anchor runs its own STUN and a signed rendezvous board; peers measure their NAT,
            exchange signed candidates, punch simultaneously, and hand the winning path to
            WireGuard only after a handshake actually moves. This is the phase that removes the
-           single point of failure rather than relocating it.</p>
+           single point of failure rather than relocating it. The rendezvous service has no
+           route that carries payload &mdash; a test fails if one ever appears.</p>
       </div>
-      <span class="maska-pill partial">In progress</span>
+      <span class="maska-pill partial">Built &#183; field pilot pending</span>
     </div>
     <div class="maska-phase">
       <span class="maska-phase-code">F5 OGLASNIK</span>
@@ -788,12 +789,14 @@
 
   <p class="maska-measured">
     Measured on the build host, not estimated: signature <b>4 ms</b> &#183; verification
-    <b>4 ms</b> &#183; full name resolution including PULL <b>14 ms</b> &#183; <b>134 tests</b>,
+    <b>4 ms</b> &#183; full name resolution including PULL <b>14 ms</b> &#183; <b>215 tests</b>,
     standard library only, no network egress. Ed25519 is checked against RFC&nbsp;8032 &sect;7.1
-    vectors and X25519 against RFC&nbsp;7748 &sect;5.2 plus a cross-check against OpenSSL.
-    F4's own test suite and the <code>medijapos</code> field pilot are still open &mdash; the
-    pass criterion was set before the measurement: seven days with both paths measured in
-    parallel and no watchdog alarm.
+    vectors, X25519 against RFC&nbsp;7748 &sect;5.2 plus a cross-check against OpenSSL, and the
+    NAT simulator models RFC&nbsp;4787 mapping and filtering classes &mdash; including the
+    <em>failure</em> cases: a punch through a symmetric NAT fails even when the code is told the
+    NAT is EIM. What is still open is the field pilot on real CGNAT hardware; the pass criterion
+    was set before the measurement: seven days with both paths measured in parallel and no
+    watchdog alarm.
   </p>
 </section>
 
