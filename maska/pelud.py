@@ -23,7 +23,7 @@ ne pokriva.
 STVARNA GRANICA OVE IMPLEMENTACIJE (ZAKON 46 — izraz mora odgovarati lancu):
 alg=ed25519 je jedino sto ovdje postoji. ML-DSA-65 se u ovom stacku NE nalazi
 (izmjereno grep-om po /var/www/genesis/core — nula pogodaka), pa je rezerviran
-kao ime, a zapis s njim se ODBIJA s jasnim razlogom umjesto da se tihо
+kao ime, a zapis s njim se ODBIJA s jasnim razlogom umjesto da se tiho
 prihvati kao da je provjeren.
 """
 from __future__ import annotations
