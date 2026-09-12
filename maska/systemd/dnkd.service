@@ -1,0 +1,41 @@
+# dnkd — lokalni razrjesitelj .dnk imena (MASKA F2)
+# Instalira se skriptom maska/instaliraj_dnkd.sh; __* oznake se zamjenjuju pri instalaciji.
+[Unit]
+Description=dnkd — MASKA lokalni razrjesitelj .dnk (PELUD PULL + Ed25519 verifikacija)
+Documentation=file://__KORIJEN__/docs/MASKA-FAZE.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__KORISNIK__
+Group=__KORISNIK__
+Environment=MASKA_DIR=__STANJE__
+Environment=PYTHONUNBUFFERED=1
+WorkingDirectory=__KORIJEN__
+ExecStart=__PYTHON__ -m maska.dnkd --konfig __STANJE__/dnkd.json
+Restart=always
+RestartSec=5
+
+# Ogradjivanje: dnkd sluza portove > 1024 pa mu NE treba ni jedna sposobnost.
+# Kompromitirani razrjesitelj ne smije moci dirati sistemski trust store —
+# upravo to je razlog zasto MASKA nikad ne instalira vlastiti CA.
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+ReadWritePaths=__STANJE__
+
+[Install]
+WantedBy=multi-user.target

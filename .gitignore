@@ -6,3 +6,13 @@
 __pycache__/
 *.pyc
 .DS_Store
+
+# MASKA — generirani materijal i kljucevi (nikad u git)
+izlaz-rizom/
+*.privatni
+*.privatni.PREMJESTI_I_IZBRISI
+godovi.jsonl
+mapiranje.json
+dnkd.json
+*.bak
+*.bak_*
