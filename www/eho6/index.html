@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EHO6 — Decentralized Verification Protocol</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --bg2: #111318;
+    --bg3: #1a1d24;
+    --border: #2a2d35;
+    --text: #e8eaf0;
+    --text2: #8b8fa8;
+    --accent: #5b9cf6;
+    --accent2: #7c5cbf;
+    --green: #3dd68c;
+    --orange: #f5a623;
+    --red: #f05252;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+    --radius: 10px;
+    --transition: 0.25s ease;
+  }
+  [data-theme="light"] {
+    --bg: #f4f6fb;
+    --bg2: #ffffff;
+    --bg3: #eaedf5;
+    --border: #d0d4e0;
+    --text: #14161f;
+    --text2: #5a5f78;
+    --accent: #2563eb;
+    --accent2: #6d28d9;
+    --green: #16a34a;
+    --orange: #d97706;
+    --red: #dc2626;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background var(--transition), color var(--transition);
+  }
+
+  /* NAV */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.9rem 2rem;
+    background: rgba(10,12,16,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    transition: background var(--transition), border-color var(--transition);
+  }
+  [data-theme="light"] nav { background: rgba(244,246,251,0.88); }
+  .nav-brand {
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+  .nav-links { display: flex; align-items: center; gap: 1.5rem; }
+  .nav-links a {
+    color: var(--text2);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: color var(--transition);
+  }
+  .nav-links a:hover { color: var(--text); }
+  .theme-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background var(--transition), border-color var(--transition);
+    line-height: 1;
+  }
+  .theme-btn:hover { background: var(--border); }
+
+  /* HERO */
+  .hero {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; text-align: center;
+    padding: 6rem 1.5rem 4rem;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; top: -120px; left: 50%; transform: translateX(-50%);
+    width: 700px; height: 700px;
+    background: radial-gradient(ellipse, rgba(91,156,246,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: 0.3rem 1rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+  }
+  .hero-badge::before {
+    content: '';
+    width: 7px; height: 7px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .hero h1 {
+    font-family: var(--mono);
+    font-size: clamp(4rem, 12vw, 9rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--text) 30%, var(--accent) 70%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1rem;
+  }
+  .hero-sub {
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    font-weight: 500;
+    color: var(--text2);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 1.2rem;
+  }
+  .hero-tagline {
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+    color: var(--text);
+    font-style: italic;
+    font-weight: 300;
+    margin-bottom: 3rem;
+    opacity: 0.85;
+  }
+  .hero-cta { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.75rem 1.75rem;
+    border-radius: var(--radius);
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all var(--transition);
+    cursor: pointer;
+    border: none;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { filter: brightness(1.15); transform: translateY(-1px); }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* SECTION */
+  section { padding: 4rem 1.5rem; max-width: 1060px; margin: 0 auto; }
+  .section-label {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin-bottom: 0.6rem;
+  }
+  h2 {
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
+    font-weight: 700;
+    margin-bottom: 2.5rem;
+    color: var(--text);
+  }
+
+  /* INSTALL BOX */
+  .install-wrap {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 2rem 0;
+  }
+  .install-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.7rem 1.2rem;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+  }
+  .install-dots { display: flex; gap: 6px; }
+  .install-dots span {
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .dot-r { background: #f05252; }
+  .dot-y { background: #f5a623; }
+  .dot-g { background: #3dd68c; }
+  .install-title {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--text2);
+    letter-spacing: 0.06em;
+  }
+  .copy-btn {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 0.3rem 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-family: var(--mono);
+    transition: all var(--transition);
+  }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .copy-btn.copied { border-color: var(--green); color: var(--green); }
+  .install-cmd {
+    padding: 1.4rem 1.4rem;
+    font-family: var(--mono);
+    font-size: clamp(0.7rem, 2vw, 0.9rem);
+    color: var(--green);
+    word-break: break-all;
+    line-height: 1.7;
+    user-select: all;
+  }
+  .install-cmd .prompt { color: var(--accent2); user-select: none; }
+
+  /* STEPS */
+  .steps { display: flex; flex-direction: column; gap: 1.5rem; }
+  .step {
+    display: flex; gap: 1.5rem;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    transition: border-color var(--transition);
+  }
+  .step:hover { border-color: var(--accent); }
+  .step-num {
+    flex-shrink: 0;
+    width: 2.5rem; height: 2.5rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 1rem;
+    color: #fff;
+  }
+  .step-body h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.3rem; }
+  .step-body p { color: var(--text2); font-size: 0.92rem; }
+  .step-body code {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.15rem 0.45rem;
+    color: var(--accent);
+  }
+
+  /* FEATURES GRID */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.2rem;
+  }
+  .feature {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    transition: border-color var(--transition), transform var(--transition);
+  }
+  .feature:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .feature-icon { font-size: 1.8rem; margin-bottom: 0.8rem; display: block; }
+  .feature h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.4rem; }
+  .feature p { font-size: 0.85rem; color: var(--text2); line-height: 1.5; }
+
+  /* ANCHOR TABLE */
+  .table-wrap {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead { background: var(--bg3); }
+  th {
+    padding: 0.85rem 1.2rem;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text2);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 1rem 1.2rem;
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--border);
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg3); }
+  .status-dot {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    font-size: 0.85rem; font-weight: 500;
+  }
+  .status-dot::before {
+    content: '';
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  .status-live::before { background: var(--green); }
+  .mono { font-family: var(--mono); font-size: 0.82rem; color: var(--text2); }
+
+  /* LINKS */
+  .links-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; }
+
+  /* DIVIDER */
+  .divider { height: 1px; background: var(--border); max-width: 1060px; margin: 0 auto; }
+
+  /* FOOTER */
+  footer {
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    color: var(--text2);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+    margin-top: 2rem;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+  .footer-brand {
+    font-family: var(--mono);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 640px) {
+    nav { padding: 0.8rem 1rem; }
+    .nav-links a { display: none; }
+    .nav-links .theme-btn { display: flex; }
+    .hero { padding: 4rem 1rem 3rem; }
+    .step { flex-direction: column; }
+    th, td { padding: 0.65rem 0.85rem; }
+    .table-wrap { overflow-x: auto; }
+  }
+
+  /* ===== MASKA sloj (F1-F5) — dodano uz postojeci sustav tokena ===== */
+  .maska-intro { max-width: 68ch; color: var(--text2); font-size: 1rem; }
+  .maska-intro strong { color: var(--text); font-weight: 600; }
+  .maska-record {
+    margin: 1.6rem 0 0.5rem;
+    background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1rem 1.1rem; overflow-x: auto;
+  }
+  .maska-record code {
+    font-family: var(--mono); font-size: 0.82rem; line-height: 1.9;
+    white-space: pre; display: block; color: var(--text2);
+  }
+  .maska-record .k { color: var(--accent2); }
+  .maska-record .v { color: var(--text); }
+  .maska-caption { color: var(--text2); font-size: 0.84rem; margin-top: 0.6rem; }
+
+  .maska-ladder { display: flex; flex-direction: column; gap: 0; margin-top: 1.8rem;
+                  border: 1px solid var(--border); border-radius: var(--radius);
+                  background: var(--bg2); overflow: hidden; }
+  .maska-phase {
+    display: grid; grid-template-columns: 7rem 1fr auto; gap: 1rem;
+    align-items: baseline; padding: 1rem 1.2rem;
+    border-top: 1px solid var(--border);
+  }
+  .maska-phase:first-child { border-top: none; }
+  .maska-phase-code {
+    font-family: var(--mono); font-size: 0.8rem; font-weight: 700;
+    letter-spacing: 0.06em; color: var(--accent2);
+  }
+  .maska-phase h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.2rem; }
+  .maska-phase p { color: var(--text2); font-size: 0.89rem; max-width: 62ch; }
+  .maska-phase code { font-family: var(--mono); font-size: 0.83rem; color: var(--text); }
+  .maska-pill {
+    font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.08em;
+    text-transform: uppercase; white-space: nowrap;
+    border: 1px solid currentColor; border-radius: 99px; padding: 0.18rem 0.6rem;
+  }
+  .maska-pill.built { color: var(--green); }
+  .maska-pill.partial { color: var(--orange); }
+  .maska-pill.none { color: var(--text2); }
+
+  .maska-figure { margin: 2rem 0 0; }
+  .maska-figure svg { width: 100%; max-width: 100%; height: auto; display: block; }
+  .maska-figure figcaption { color: var(--text2); font-size: 0.84rem; margin-top: 0.7rem;
+                             max-width: 68ch; }
+  .maska-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+               gap: 1rem; margin-top: 2rem; }
+  .maska-box { background: var(--bg2); border: 1px solid var(--border);
+               border-radius: var(--radius); padding: 1.1rem 1.2rem; }
+  .maska-box.limits { border-left: 3px solid var(--orange); }
+  .maska-box h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.7rem; }
+  .maska-box ul { list-style: none; display: flex; flex-direction: column; gap: 0.55rem; }
+  .maska-box li { color: var(--text2); font-size: 0.88rem; padding-left: 1.1rem;
+                  position: relative; }
+  .maska-box li::before { content: '\2014'; position: absolute; left: 0;
+                          color: var(--border); }
+  .maska-box li b { color: var(--text); font-weight: 600; }
+  .maska-box code { font-family: var(--mono); font-size: 0.82rem; color: var(--text); }
+  .maska-measured { margin-top: 1.6rem; font-family: var(--mono); font-size: 0.8rem;
+                    color: var(--text2); }
+  .maska-measured b { color: var(--green); font-weight: 700; }
+  .hero-new {
+    display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 1.6rem;
+    font-family: var(--mono); font-size: 0.78rem; text-decoration: none;
+    color: var(--accent2); border: 1px solid var(--border); border-radius: 99px;
+    padding: 0.35rem 0.9rem; transition: border-color var(--transition);
+  }
+  .hero-new:hover { border-color: var(--accent2); }
+  .hero-new span { color: var(--text2); }
+  @media (max-width: 640px) {
+    .maska-phase { grid-template-columns: 1fr; gap: 0.35rem; }
+    .maska-phase-code { order: -1; }
+  }
+</style>
+</head>
+<body data-theme="dark">
+
+<nav>
+  <span class="nav-brand">EHO6://</span>
+  <div class="nav-links">
+    <a href="#install">Install</a>
+    <a href="#steps">How It Works</a>
+    <a href="#features">Features</a>
+    <a href="#maska">MASKA</a>
+    <a href="#anchors">Anchors</a>
+    <a href="https://github.com/ivanbrtan66/eho6-protocol" target="_blank" rel="noopener">GitHub</a>
+    <button class="theme-btn" id="themeToggle" title="Toggle theme">&#9728;</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">Protocol v6 &middot; Live</div>
+  <h1>EHO6</h1>
+  <p class="hero-sub">Decentralized Verification Protocol</p>
+  <p class="hero-tagline">&ldquo;Truth is proven, not claimed.&rdquo;</p>
+  <div class="hero-cta">
+    <a class="btn btn-primary" href="#install">&#9654; Quick Install</a>
+    <a class="btn btn-outline" href="/quantum/eho6/whitepaper.pdf" target="_blank">&#128196; Whitepaper</a>
+    <a class="btn btn-outline" href="https://github.com/ivanbrtan66/eho6-protocol" target="_blank" rel="noopener">&#128279; GitHub</a>
+  </div>
+  <a class="hero-new" href="#maska">New &#183; MASKA address indirection
+    <span>&mdash; signed, expiring location &rarr;</span></a>
+</div>
+
+<div class="divider"></div>
+
+<!-- INSTALL -->
+<section id="install">
+  <p class="section-label">// one-command install</p>
+  <h2>Get Running in 30 Seconds</h2>
+
+  <div class="install-wrap">
+    <div class="install-header">
+      <div class="install-dots">
+        <span class="dot-r"></span>
+        <span class="dot-y"></span>
+        <span class="dot-g"></span>
+      </div>
+      <span class="install-title">bash &mdash; eho6 bootstrap</span>
+      <button class="copy-btn" id="copyBtn" onclick="copyInstall()">Copy</button>
+    </div>
+    <div class="install-cmd">
+      <span class="prompt">$ </span>curl -fsSL https://genesis.limit-connect.com/quantum/eho6/install.sh | bash
+    </div>
+  </div>
+
+  <p style="color:var(--text2); font-size:0.88rem; margin-top:0.8rem;">
+    Requires: Linux/macOS &middot; Python 3.11+ &middot; stdlib only &mdash; no pip install needed.
+    <a href="https://github.com/ivanbrtan66/eho6-protocol" target="_blank" rel="noopener" style="color:var(--accent);">View source before running &rarr;</a>
+  </p>
+</section>
+
+<div class="divider"></div>
+
+<!-- STEPS -->
+<section id="steps">
+  <p class="section-label">// admission flow</p>
+  <h2>Three Steps to Join the Mesh</h2>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Request Admission</h3>
+        <p>
+          Run the installer. It generates a local <code>Ed25519</code> keypair, builds your
+          <code>rendezvous seed</code>, and sends a signed admission request to both anchor nodes
+          (Frankfurt + Berlin). Your public key becomes your identity &mdash; no account, no email.
+        </p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Send 0.001 XMR</h3>
+        <p>
+          A one-time Monero micro-payment proves liveness and prevents Sybil attacks.
+          The installer prints your unique <code>XMR subaddress</code>. Payment is detected
+          on-chain &mdash; no centralized gateway, no KYC. Confirmation takes ~2 minutes.
+        </p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Node Admitted + Running</h3>
+        <p>
+          Both anchors co-sign your <code>phi_t admission token</code>. Your node starts publishing
+          <code>/borg/health.json</code> every 30 s (BORG format). The mesh pulls your
+          health &mdash; you never push to peers. You are now a verified EHO6 node.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FEATURES -->
+<section id="features">
+  <p class="section-label">// protocol primitives</p>
+  <h2>Built on Solid Foundations</h2>
+
+  <div class="features">
+    <div class="feature">
+      <span class="feature-icon">&#128272;</span>
+      <h3>Ed25519 2-Anchor</h3>
+      <p>Every admission token requires co-signatures from two geographically independent anchor nodes. One anchor down = protocol continues uninterrupted.</p>
+    </div>
+    <div class="feature">
+      <span class="feature-icon">&#129689;</span>
+      <h3>Monero Payment</h3>
+      <p>0.001 XMR micro-payment as Sybil resistance. Privacy-preserving, non-custodial. No exchange account required &mdash; any XMR wallet works.</p>
+    </div>
+    <div class="feature">
+      <span class="feature-icon">&#128230;</span>
+      <h3>stdlib-only</h3>
+      <p>Zero external dependencies. Ships as a single Python file using only the standard library. Auditable in minutes, deployable on any Python 3.9+ system.</p>
+    </div>
+    <div class="feature">
+      <span class="feature-icon">&#129658;</span>
+      <h3>BORG Health Format</h3>
+      <p>Standard <code>/borg/health.json</code> published every 30 s. Includes <code>dok_count</code>, <code>last_block_hash</code>, disk, memory, and load metrics.</p>
+    </div>
+    <div class="feature">
+      <span class="feature-icon">&#127807;</span>
+      <h3>Deterministic Rendezvous</h3>
+      <p>Seed-based peer discovery with bit-identical output across architectures (x86/ARM proven). No central directory server required.</p>
+    </div>
+    <div class="feature">
+      <span class="feature-icon">&#9889;</span>
+      <h3>Pull-only Mesh</h3>
+      <p>Nodes never push to peers. Health data is pulled every 30 s. No WebSockets, no long-polling &mdash; NAT-friendly, works behind any firewall.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- MASKA (F1-F5) -->
+<div class="divider"></div>
+
+<section id="maska">
+  <p class="section-label">// address indirection layer</p>
+  <h2>Where You Are Found Is Not Where You Live</h2>
+
+  <p class="maska-intro">
+    EHO6 proves <strong>who</strong> a node is. MASKA decides <strong>where</strong> it can be
+    reached &mdash; and keeps that answer out of DNS. A static <code>A</code> record is a fact
+    with no author and no expiry: whoever changes it has changed the truth. MASKA replaces it
+    with a <strong>signed claim that expires</strong>, and moves the real location out of the
+    public record entirely. The DNS name stays exactly where it is, because search reach is a
+    real requirement &mdash; it is the <em>content</em> of the answer that changes.
+  </p>
+
+  <div class="maska-record">
+    <code><span class="k">v</span>=<span class="v">PELUD1</span> <span class="k">ime</span>=<span class="v">medijapos.dnk</span> <span class="k">alg</span>=<span class="v">ed25519</span> <span class="k">pk</span>=<span class="v">&lt;64 hex&gt;</span> <span class="k">h</span>=<span class="v">4287</span> <span class="k">exp</span>=<span class="v">&lt;epoch&gt;</span>
+<span class="k">loc</span>=<span class="v">wg://217.160.71.124:51820/&lt;key&gt;|https://mirror.example</span> <span class="k">sig</span>=<span class="v">&lt;base64url&gt;</span></code>
+  </div>
+  <p class="maska-caption">
+    One PELUD record. It extends the GENESIS1 DNS TXT format already in use rather than
+    inventing a new one. Unknown fields, non-canonical spelling, an expired claim, a missing
+    pinned key, or a reserved-but-unimplemented algorithm are all <em>rejected</em> &mdash;
+    never silently accepted. A signature checked with the key from the same record proves
+    nothing, so verification without a pinned key fails by design.
+  </p>
+
+  <div class="maska-ladder">
+    <div class="maska-phase">
+      <span class="maska-phase-code">F1 PELUD</span>
+      <div>
+        <h3>Signed, expiring locator record</h3>
+        <p>Ed25519 over a fixed canonical field order, one-hour maximum lifetime, verified
+           against a pinned key. The address stops being a fact and becomes a claim with a
+           deadline.</p>
+      </div>
+      <span class="maska-pill built">Built</span>
+    </div>
+    <div class="maska-phase">
+      <span class="maska-phase-code">F2 dnkd</span>
+      <div>
+        <h3>Local resolver for <code>.dnk</code></h3>
+        <p>Name resolution becomes a local function of the host again, the way ARPANET's
+           <code>HOSTS.TXT</code> worked before DNS existed &mdash; but pulled, signed, and
+           expiring. Everything outside <code>.dnk</code> gets <code>REFUSED</code>: a resolver
+           that forwards becomes a proxy for all of your traffic. It installs no CA into the
+           system trust store, ever.</p>
+      </div>
+      <span class="maska-pill built">Built</span>
+    </div>
+    <div class="maska-phase">
+      <span class="maska-phase-code">F3 RIZOM</span>
+      <div>
+        <h3>Dual-anchor WireGuard</h3>
+        <p>Replaces a single <code>ssh -R</code> reverse tunnel, which is a user-space TCP
+           session that goes half-open when ISP NAT forgets the mapping &mdash; device alive,
+           tunnel dead, neither side aware. Two anchors, kernel WireGuard, stateless handshake,
+           <code>AllowedIPs</code> restricted to the anchor's <code>/32</code> so ordinary
+           traffic is untouched.</p>
+      </div>
+      <span class="maska-pill partial">Tooling built &#183; pilot pending</span>
+    </div>
+    <div class="maska-phase">
+      <span class="maska-phase-code">F4 PROBOD</span>
+      <div>
+        <h3>Direct punch through NAT</h3>
+        <p>The anchor runs its own STUN and a signed rendezvous board; peers measure their NAT,
+           exchange signed candidates, punch simultaneously, and hand the winning path to
+           WireGuard only after a handshake actually moves. This is the phase that removes the
+           single point of failure rather than relocating it.</p>
+      </div>
+      <span class="maska-pill partial">In progress</span>
+    </div>
+    <div class="maska-phase">
+      <span class="maska-phase-code">F5 OGLASNIK</span>
+      <div>
+        <h3>K-of-N announcement boards</h3>
+        <p>N registrars, TLDs and jurisdictions with K-of-N consensus before any redirect. The
+           only phase that costs search reach, because it splits one signal across three
+           domains &mdash; so it is conditional, not merely deferred.</p>
+      </div>
+      <span class="maska-pill none">Not built</span>
+    </div>
+  </div>
+
+  <figure class="maska-figure">
+    <svg viewBox="0 0 860 260" role="img"
+         aria-label="Before F4 all traffic passes through the anchor, which is a single point of failure. After F4 the anchor only exchanges signed candidates and traffic goes directly between peers.">
+      <defs>
+        <marker id="mk-arrow" viewBox="0 0 10 10" refX="9" refY="5"
+                markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"></path>
+        </marker>
+        <marker id="mk-arrow-direct" viewBox="0 0 10 10" refX="9" refY="5"
+                markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent2)"></path>
+        </marker>
+      </defs>
+
+      <!-- lijevo: F3 -->
+      <text x="16" y="24" font-size="12" font-family="var(--mono)"
+            fill="currentColor" opacity="0.55">F3 &#183; RIZOM (today)</text>
+      <rect x="16" y="112" width="104" height="40" rx="8" fill="none"
+            stroke="currentColor" stroke-width="1.5"></rect>
+      <text x="68" y="137" font-size="12" text-anchor="middle" fill="currentColor">edge X96</text>
+      <rect x="168" y="112" width="104" height="40" rx="8" fill="none"
+            stroke="currentColor" stroke-width="1.5"></rect>
+      <text x="220" y="137" font-size="12" text-anchor="middle" fill="currentColor">anchor</text>
+      <rect x="320" y="112" width="88" height="40" rx="8" fill="none"
+            stroke="currentColor" stroke-width="1.5"></rect>
+      <text x="364" y="137" font-size="12" text-anchor="middle" fill="currentColor">peer</text>
+      <line x1="120" y1="132" x2="164" y2="132" stroke="currentColor" stroke-width="1.5"
+            marker-end="url(#mk-arrow)"></line>
+      <line x1="272" y1="132" x2="316" y2="132" stroke="currentColor" stroke-width="1.5"
+            marker-end="url(#mk-arrow)"></line>
+      <text x="220" y="96" font-size="11" text-anchor="middle" fill="currentColor"
+            opacity="0.75">all traffic</text>
+      <text x="220" y="174" font-size="11" text-anchor="middle" fill="currentColor"
+            opacity="0.55">sees everything</text>
+      <text x="220" y="190" font-size="11" text-anchor="middle" fill="currentColor"
+            opacity="0.55">anchor down = path down</text>
+
+      <line x1="440" y1="40" x2="440" y2="230" stroke="currentColor" stroke-width="1"
+            opacity="0.25"></line>
+
+      <!-- desno: F4 -->
+      <text x="470" y="24" font-size="12" font-family="var(--mono)"
+            fill="var(--accent2)">F4 &#183; PROBOD</text>
+      <rect x="470" y="152" width="104" height="40" rx="8" fill="none"
+            stroke="currentColor" stroke-width="1.5"></rect>
+      <text x="522" y="177" font-size="12" text-anchor="middle" fill="currentColor">edge X96</text>
+      <rect x="672" y="152" width="88" height="40" rx="8" fill="none"
+            stroke="currentColor" stroke-width="1.5"></rect>
+      <text x="716" y="177" font-size="12" text-anchor="middle" fill="currentColor">peer</text>
+      <rect x="560" y="52" width="112" height="40" rx="8" fill="none"
+            stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"></rect>
+      <text x="616" y="77" font-size="12" text-anchor="middle" fill="currentColor">anchor</text>
+      <line x1="540" y1="148" x2="580" y2="96" stroke="currentColor" stroke-width="1.2"
+            stroke-dasharray="4 3" marker-end="url(#mk-arrow)"></line>
+      <line x1="700" y1="148" x2="656" y2="96" stroke="currentColor" stroke-width="1.2"
+            stroke-dasharray="4 3" marker-end="url(#mk-arrow)"></line>
+
+      <line x1="578" y1="172" x2="666" y2="172" stroke="var(--accent2)" stroke-width="2.5"
+            marker-end="url(#mk-arrow-direct)" marker-start="url(#mk-arrow-direct)"></line>
+      <text x="622" y="206" font-size="11" text-anchor="middle" fill="var(--accent2)">direct UDP after punch</text>
+      <text x="616" y="40" font-size="11" text-anchor="middle" fill="currentColor"
+            opacity="0.75">signed candidates only</text>
+      <text x="622" y="228" font-size="11" text-anchor="middle" fill="currentColor"
+            opacity="0.55">anchor down = path survives</text>
+    </svg>
+    <figcaption>
+      What F4 changes. Until the punch, the anchor carries the traffic and is both the
+      single point of failure and the only place the traffic can be read. After the punch it
+      exchanges signed candidates and nothing else &mdash; and its failure no longer drops an
+      established path. Symmetric NAT (EDM) is the case where the punch cannot work; there the
+      anchor stays a relay, and MASKA reports that instead of claiming success.
+    </figcaption>
+  </figure>
+
+  <div class="maska-two">
+    <div class="maska-box">
+      <h3>What the network decides, not the code</h3>
+      <ul>
+        <li><b>EIM</b> &mdash; the NAT hands out the same external address regardless of
+            destination, so the address one anchor sees is usable by a third party.
+            <code>Punch possible.</code></li>
+        <li><b>EDM (symmetric)</b> &mdash; a new port per destination. The address the EU anchor
+            sees is valid for nobody else. <code>Relay stays.</code> Reported as EDM, not
+            attempted and quietly downgraded.</li>
+        <li><b>Unknown</b> &mdash; measuring this needs two vantage points on different IP
+            addresses. With one anchor the answer is <code>NEPOZNATO</code>; &ldquo;probably
+            fine&rdquo; is not a measurement.</li>
+      </ul>
+    </div>
+    <div class="maska-box limits">
+      <h3>What MASKA does not do</h3>
+      <ul>
+        <li>It does not remove the <code>A</code> record. No unmodified browser can reach you
+            without DNS, an IP and a route; every alternative trades away reach.</li>
+        <li>It does not install a certificate authority. A local CA would be a key for
+            <em>every</em> site on that device &mdash; real damage, not protection.</li>
+        <li>The chain height in a record is carried, <b>not verified</b> against the chain.</li>
+        <li>There is <b>no key revocation</b> yet; a short expiry limits how long a compromise
+            lasts, not that it happened.</li>
+        <li>The measurement ledger is hash-chained locally but <b>not anchored</b> in the
+            chain, so whoever holds the file could rewrite all of it.</li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="maska-measured">
+    Measured on the build host, not estimated: signature <b>4 ms</b> &#183; verification
+    <b>4 ms</b> &#183; full name resolution including PULL <b>14 ms</b> &#183; <b>134 tests</b>,
+    standard library only, no network egress. Ed25519 is checked against RFC&nbsp;8032 &sect;7.1
+    vectors and X25519 against RFC&nbsp;7748 &sect;5.2 plus a cross-check against OpenSSL.
+    F4's own test suite and the <code>medijapos</code> field pilot are still open &mdash; the
+    pass criterion was set before the measurement: seven days with both paths measured in
+    parallel and no watchdog alarm.
+  </p>
+</section>
+
+<!-- ANCHOR STATUS -->
+<section id="anchors">
+  <p class="section-label">// anchor nodes</p>
+  <h2>Active Anchor Network</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Node</th>
+          <th>Location</th>
+          <th>Endpoint</th>
+          <th>Status</th>
+          <th>Role</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span style="font-family:var(--mono);font-weight:700;color:var(--accent);">genesis-eu</span></td>
+          <td>Frankfurt, DE</td>
+          <td class="mono">genesis.limit-connect.com</td>
+          <td><span class="status-dot status-live">Live</span></td>
+          <td><span class="mono">Anchor A &middot; Primary</span></td>
+        </tr>
+        <tr>
+          <td><span style="font-family:var(--mono);font-weight:700;color:var(--accent);">genesis-de</span></td>
+          <td>Berlin, DE</td>
+          <td class="mono">sati.ink</td>
+          <td><span class="status-dot status-live">Live</span></td>
+          <td><span class="mono">Anchor B &middot; Secondary</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p style="margin-top:1.2rem; color:var(--text2); font-size:0.87rem;">
+    Anchor health endpoints:
+    <a href="https://genesis.limit-connect.com/borg/health.json" target="_blank" style="color:var(--accent); font-family:var(--mono);">genesis-eu</a>
+    &nbsp;&middot;&nbsp;
+    <a href="https://sati.ink/borg/health.json" target="_blank" style="color:var(--accent); font-family:var(--mono);">genesis-de</a>
+  </p>
+</section>
+
+<div class="divider"></div>
+
+<!-- RESOURCES -->
+<section id="resources">
+  <p class="section-label">// resources</p>
+  <h2>Documentation &amp; Source</h2>
+  <div class="links-row">
+    <a class="btn btn-primary" href="https://github.com/ivanbrtan66/eho6-protocol" target="_blank" rel="noopener">
+      &#128279; GitHub Repository
+    </a>
+    <a class="btn btn-outline" href="/quantum/eho6/whitepaper.pdf" target="_blank">
+      &#128196; Whitepaper PDF
+    </a>
+    <a class="btn btn-outline" href="/quantum/eho6/install.sh" target="_blank">
+      &#128220; install.sh source
+    </a>
+    <a class="btn btn-outline" href="https://genesis.limit-connect.com/borg/health.json" target="_blank">
+      &#129658; Anchor Health JSON
+    </a>
+    <a class="btn btn-outline" href="https://github.com/ivanbrtan66/eho6-protocol/blob/main/docs/MASKA-FAZE.md" target="_blank" rel="noopener">
+      &#129517; MASKA phases (F1&ndash;F5)
+    </a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <span class="footer-brand">EHO6://</span>
+  EHO6 Research Collective 2026 &middot;
+  <a href="https://github.com/ivanbrtan66/eho6-protocol" target="_blank" rel="noopener">GitHub</a> &middot;
+  <a href="/quantum/eho6/whitepaper.pdf" target="_blank">Whitepaper</a> &middot;
+  MIT License &middot;
+  <span style="font-family:var(--mono); font-size:0.78rem; color:var(--text2);">Truth is proven, not claimed.</span>
+</footer>
+
+<script>
+  (function() {
+    var btn = document.getElementById('themeToggle');
+    var html = document.documentElement;
+    var stored = 'dark';
+    try { stored = localStorage.getItem('eho6-theme') || 'dark'; } catch (e) { /* privatni prozor: tema se ne pamti, prekidac i dalje radi */ }
+    html.setAttribute('data-theme', stored);
+    btn.innerHTML = stored === 'dark' ? '&#9728;' : '&#9790;';
+
+    btn.addEventListener('click', function() {
+      var cur = html.getAttribute('data-theme');
+      var next = cur === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      try { localStorage.setItem('eho6-theme', next); } catch (e) {}
+      btn.innerHTML = next === 'dark' ? '&#9728;' : '&#9790;';
+    });
+  })();
+
+  function copyInstall() {
+    var cmd = 'curl -fsSL https://genesis.limit-connect.com/quantum/eho6/install.sh | bash';
+    var b = document.getElementById('copyBtn');
+    function markCopied() {
+      b.textContent = 'Copied!';
+      b.classList.add('copied');
+      setTimeout(function() { b.textContent = 'Copy'; b.classList.remove('copied'); }, 2200);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(cmd).then(markCopied);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = cmd;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try { document.execCommand('copy'); } catch(e) {}
+      document.body.removeChild(ta);
+      markCopied();
+    }
+  }
+</script>
+</body>
+</html>
