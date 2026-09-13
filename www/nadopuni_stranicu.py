@@ -208,8 +208,8 @@ SEKCIJA = OZNAKA + """
   <p class="maska-caption">
     One PELUD record. It extends the GENESIS1 DNS TXT format already in use rather than
     inventing a new one. Unknown fields, non-canonical spelling, an expired claim, a missing
-    pinned key, or a reserved-but-unimplemented algorithm are all <em>rejected</em> &mdash;
-    never silently accepted. A signature checked with the key from the same record proves
+    pinned key, or a reserved-but-unimplemented <code>alg</code> (e.g. <code>ml-dsa-65</code>)
+    are all <em>rejected</em> &mdash; never silently accepted. A signature checked with the key from the same record proves
     nothing, so verification without a pinned key fails by design.
   </p>
 
@@ -351,6 +351,28 @@ PYTHON_NOVO = "Requires: Linux/macOS &middot; Python 3.11+ &middot; stdlib only"
 
 
 
+# Dvojezicna postava: hreflang par umjesto prijevoda preko postojece stranice.
+# Razlog je c1570: SEO doseg je STVARAN zahtjev zbog kojeg DNS uopce ostaje.
+# Prijevod jedne stranice gubi globalni doseg; par /quantum/eho6/ + /hr/ ga
+# povecava, jer trazilica indeksira obje i svakoj salje njezinu publiku.
+HREFLANG = """<link rel="alternate" hreflang="en" href="https://genesis.limit-connect.com/quantum/eho6/">
+<link rel="alternate" hreflang="hr" href="https://genesis.limit-connect.com/quantum/eho6/hr/">
+<link rel="alternate" hreflang="x-default" href="https://genesis.limit-connect.com/quantum/eho6/">
+"""
+
+PREKIDAC_JEZIKA = """    <span class="jezik"><a class="jezik-aktivan" href="/quantum/eho6/" hreflang="en">EN</a><a href="/quantum/eho6/hr/" hreflang="hr">HR</a></span>
+"""
+
+CSS_JEZIK = """
+  /* prekidac jezika */
+  .jezik { display: inline-flex; border: 1px solid var(--border); border-radius: 6px;
+           overflow: hidden; font-family: var(--mono); font-size: 0.72rem; }
+  .jezik a { padding: 0.25rem 0.5rem; color: var(--text2); text-decoration: none;
+             transition: color var(--transition), background var(--transition); }
+  .jezik a:hover { color: var(--text); }
+  .jezik a.jezik-aktivan { background: var(--bg3); color: var(--accent); }
+"""
+
 JS_STARO = """    var stored = localStorage.getItem('eho6-theme') || 'dark';"""
 JS_NOVO = """    var stored = 'dark';
     try { stored = localStorage.getItem('eho6-theme') || 'dark'; } catch (e) { /* privatni prozor: tema se ne pamti, prekidac i dalje radi */ }"""
@@ -379,7 +401,11 @@ def nadopuni(html: str) -> tuple[str, list[str]]:
         html = html.replace(sidro, novo, 1)
         izmjene.append(opis)
 
-    zamijeni("</style>", CSS + "</style>", "CSS za MASKA blok (namespace maska-*)")
+    zamijeni("</style>", CSS + CSS_JEZIK + "</style>", "CSS za MASKA blok i prekidac jezika")
+    zamijeni('<link rel="preconnect" href="https://fonts.googleapis.com">',
+             HREFLANG + '<link rel="preconnect" href="https://fonts.googleapis.com">',
+             "hreflang par (en / hr / x-default)")
+    zamijeni(NAV_SIDRO, NAV_SIDRO + PREKIDAC_JEZIKA, "navigacija: prekidac jezika EN/HR")
     zamijeni(NAV_SIDRO, NAV_NOVO + NAV_SIDRO, "navigacija: link MASKA")
     zamijeni(HERO_SIDRO, HERO_NOVO, "hero: pilula 'New — MASKA'")
     zamijeni(SEKCIJA_SIDRO, SEKCIJA + "\n" + SEKCIJA_SIDRO, "sekcija #maska (F1-F5 + dijagram)")

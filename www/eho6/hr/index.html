@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EHO6 — Decentralized Verification Protocol</title>
+<title>EHO6 — Protokol decentralizirane provjere</title>
 <link rel="alternate" hreflang="en" href="https://genesis.limit-connect.com/quantum/eho6/">
 <link rel="alternate" hreflang="hr" href="https://genesis.limit-connect.com/quantum/eho6/hr/">
 <link rel="alternate" hreflang="x-default" href="https://genesis.limit-connect.com/quantum/eho6/">
@@ -466,38 +466,38 @@
 <nav>
   <span class="nav-brand">EHO6://</span>
   <div class="nav-links">
-    <a href="#install">Install</a>
-    <a href="#steps">How It Works</a>
-    <a href="#features">Features</a>
+    <a href="#install">Instalacija</a>
+    <a href="#steps">Kako radi</a>
+    <a href="#features">Temelji</a>
     <a href="#maska">MASKA</a>
-    <a href="#anchors">Anchors</a>
-    <span class="jezik"><a class="jezik-aktivan" href="/quantum/eho6/" hreflang="en">EN</a><a href="/quantum/eho6/hr/" hreflang="hr">HR</a></span>
+    <a href="#anchors">Sidra</a>
+    <span class="jezik"><a href="/quantum/eho6/" hreflang="en">EN</a><a class="jezik-aktivan" href="/quantum/eho6/hr/" hreflang="hr">HR</a></span>
     <a href="https://github.com/ivanbrtan66/eho6-protocol" target="_blank" rel="noopener">GitHub</a>
-    <button class="theme-btn" id="themeToggle" title="Toggle theme">&#9728;</button>
+    <button class="theme-btn" id="themeToggle" title="Promijeni temu">&#9728;</button>
   </div>
 </nav>
 
 <!-- HERO -->
 <div class="hero">
-  <div class="hero-badge">Protocol v6 &middot; Live</div>
+  <div class="hero-badge">Protokol v6 &middot; Živo</div>
   <h1>EHO6</h1>
-  <p class="hero-sub">Decentralized Verification Protocol</p>
-  <p class="hero-tagline">&ldquo;Truth is proven, not claimed.&rdquo;</p>
+  <p class="hero-sub">Protokol decentralizirane provjere</p>
+  <p class="hero-tagline">&bdquo;Istina se dokazuje, ne tvrdi.&ldquo;</p>
   <div class="hero-cta">
-    <a class="btn btn-primary" href="#install">&#9654; Quick Install</a>
-    <a class="btn btn-outline" href="/quantum/eho6/whitepaper.pdf" target="_blank">&#128196; Whitepaper</a>
+    <a class="btn btn-primary" href="#install">&#9654; Brza instalacija</a>
+    <a class="btn btn-outline" href="/quantum/eho6/whitepaper.pdf" target="_blank">&#128196; Rad (PDF)</a>
     <a class="btn btn-outline" href="https://github.com/ivanbrtan66/eho6-protocol" target="_blank" rel="noopener">&#128279; GitHub</a>
   </div>
-  <a class="hero-new" href="#maska">New &#183; MASKA address indirection
-    <span>&mdash; signed, expiring location &rarr;</span></a>
+  <a class="hero-new" href="#maska">Novo &#183; MASKA adresna indirekcija
+    <span>&mdash; potpisana lokacija s rokom &rarr;</span></a>
 </div>
 
 <div class="divider"></div>
 
 <!-- INSTALL -->
 <section id="install">
-  <p class="section-label">// one-command install</p>
-  <h2>Get Running in 30 Seconds</h2>
+  <p class="section-label">// instalacija jednom naredbom</p>
+  <h2>Pokreni u 30 sekundi</h2>
 
   <div class="install-wrap">
     <div class="install-header">
@@ -506,8 +506,8 @@
         <span class="dot-y"></span>
         <span class="dot-g"></span>
       </div>
-      <span class="install-title">bash &mdash; eho6 bootstrap</span>
-      <button class="copy-btn" id="copyBtn" onclick="copyInstall()">Copy</button>
+      <span class="install-title">bash &mdash; eho6 pokretanje</span>
+      <button class="copy-btn" id="copyBtn" onclick="copyInstall()">Kopiraj</button>
     </div>
     <div class="install-cmd">
       <span class="prompt">$ </span>curl -fsSL https://genesis.limit-connect.com/quantum/eho6/install.sh | bash
@@ -515,8 +515,8 @@
   </div>
 
   <p style="color:var(--text2); font-size:0.88rem; margin-top:0.8rem;">
-    Requires: Linux/macOS &middot; Python 3.11+ &middot; stdlib only &mdash; no pip install needed.
-    <a href="https://github.com/ivanbrtan66/eho6-protocol" target="_blank" rel="noopener" style="color:var(--accent);">View source before running &rarr;</a>
+    Traži: Linux/macOS &middot; Python 3.11+ &middot; samo standardna biblioteka &mdash; bez pip instalacije.
+    <a href="https://github.com/ivanbrtan66/eho6-protocol" target="_blank" rel="noopener" style="color:var(--accent);">Pogledaj izvorni kod prije pokretanja &rarr;</a>
   </p>
 </section>
 
@@ -524,40 +524,40 @@
 
 <!-- STEPS -->
 <section id="steps">
-  <p class="section-label">// admission flow</p>
-  <h2>Three Steps to Join the Mesh</h2>
+  <p class="section-label">// postupak primanja</p>
+  <h2>Tri koraka do mreže</h2>
 
   <div class="steps">
     <div class="step">
       <div class="step-num">1</div>
       <div class="step-body">
-        <h3>Request Admission</h3>
+        <h3>Zatraži primanje</h3>
         <p>
-          Run the installer. It generates a local <code>Ed25519</code> keypair, builds your
-          <code>rendezvous seed</code>, and sends a signed admission request to both anchor nodes
-          (Frankfurt + Berlin). Your public key becomes your identity &mdash; no account, no email.
+          Pokreni instalaciju. Ona lokalno generira <code>Ed25519</code> par ključeva, izgradi tvoje
+          <code>sjeme za susret</code> i posalje potpisan zahtjev za primanje na oba sidra
+          (Frankfurt + Berlin). Tvoj javni ključ postaje tvoj identitet &mdash; bez računa, bez e-pošte.
         </p>
       </div>
     </div>
     <div class="step">
       <div class="step-num">2</div>
       <div class="step-body">
-        <h3>Send 0.001 XMR</h3>
+        <h3>Pošalji 0,001 XMR</h3>
         <p>
-          A one-time Monero micro-payment proves liveness and prevents Sybil attacks.
-          The installer prints your unique <code>XMR subaddress</code>. Payment is detected
-          on-chain &mdash; no centralized gateway, no KYC. Confirmation takes ~2 minutes.
+          Jednokratna Monero mikro-uplata dokazuje da čvor živi i sprječava Sybil napade.
+          Instalacija ispise tvoju jedinstvenu <code>XMR podadresu</code>. Uplata se očitava
+          u lancu &mdash; bez posrednika i bez KYC-a. Potvrda traje oko 2 minute.
         </p>
       </div>
     </div>
     <div class="step">
       <div class="step-num">3</div>
       <div class="step-body">
-        <h3>Node Admitted + Running</h3>
+        <h3>Čvor primljen i radi</h3>
         <p>
-          Both anchors co-sign your <code>phi_t admission token</code>. Your node starts publishing
-          <code>/borg/health.json</code> every 30 s (BORG format). The mesh pulls your
-          health &mdash; you never push to peers. You are now a verified EHO6 node.
+          Oba sidra supotpisuju tvoj <code>phi_t token primanja</code>. Čvor počinje objavljivati
+          <code>/borg/health.json</code> svakih 30 s (BORG format). Mreža tvoje zdravlje
+          POVLAČI &mdash; ti nikad ne guraš prema susjedima. Od sada si provjeren EHO6 čvor.
         </p>
       </div>
     </div>
@@ -568,39 +568,39 @@
 
 <!-- FEATURES -->
 <section id="features">
-  <p class="section-label">// protocol primitives</p>
-  <h2>Built on Solid Foundations</h2>
+  <p class="section-label">// gradivni elementi protokola</p>
+  <h2>Temelji koji drže</h2>
 
   <div class="features">
     <div class="feature">
       <span class="feature-icon">&#128272;</span>
-      <h3>Ed25519 2-Anchor</h3>
-      <p>Every admission token requires co-signatures from two geographically independent anchor nodes. One anchor down = protocol continues uninterrupted.</p>
+      <h3>Ed25519, dva sidra</h3>
+      <p>Svaki token primanja traži supotpis dvaju zemljopisno neovisnih sidara. Pad jednog sidra ne prekida protokol.</p>
     </div>
     <div class="feature">
       <span class="feature-icon">&#129689;</span>
-      <h3>Monero Payment</h3>
-      <p>0.001 XMR micro-payment as Sybil resistance. Privacy-preserving, non-custodial. No exchange account required &mdash; any XMR wallet works.</p>
+      <h3>Monero uplata</h3>
+      <p>Mikro-uplata od 0,001 XMR kao obrana od Sybil napada. Čuva privatnost, bez skrbnika. Ne treba račun na mjenjačnici &mdash; radi svaki XMR novčanik.</p>
     </div>
     <div class="feature">
       <span class="feature-icon">&#128230;</span>
-      <h3>stdlib-only</h3>
-      <p>Zero external dependencies. Ships as a single Python file using only the standard library. Auditable in minutes, deployable on any Python 3.9+ system.</p>
+      <h3>Samo standardna biblioteka</h3>
+      <p>Nijedna vanjska zavisnost. Isporučuje se kao jedna Python datoteka koja koristi samo standardnu biblioteku. Pročita se u nekoliko minuta i radi na svakom sustavu s Pythonom 3.11+.</p>
     </div>
     <div class="feature">
       <span class="feature-icon">&#129658;</span>
-      <h3>BORG Health Format</h3>
-      <p>Standard <code>/borg/health.json</code> published every 30 s. Includes <code>dok_count</code>, <code>last_block_hash</code>, disk, memory, and load metrics.</p>
+      <h3>BORG format zdravlja</h3>
+      <p>Standardni <code>/borg/health.json</code> objavljen svakih 30 s. Sadrži <code>dok_count</code>, <code>last_block_hash</code>, disk, memoriju i opterećenje.</p>
     </div>
     <div class="feature">
       <span class="feature-icon">&#127807;</span>
-      <h3>Deterministic Rendezvous</h3>
-      <p>Seed-based peer discovery with bit-identical output across architectures (x86/ARM proven). No central directory server required.</p>
+      <h3>Deterministički susret</h3>
+      <p>Pronalaženje susjeda iz sjemena, s bit-identičnim ishodom na različitim arhitekturama (dokazano x86/ARM). Bez središnjeg imenika.</p>
     </div>
     <div class="feature">
       <span class="feature-icon">&#9889;</span>
-      <h3>Pull-only Mesh</h3>
-      <p>Nodes never push to peers. Health data is pulled every 30 s. No WebSockets, no long-polling &mdash; NAT-friendly, works behind any firewall.</p>
+      <h3>Mreža koja samo povlači</h3>
+      <p>Čvorovi nikad ne guraju prema susjedima. Zdravlje se povlači svakih 30 s. Bez WebSocketa i dugog čekanja &mdash; prolazi kroz NAT i radi iza svakog vatrozida.</p>
     </div>
   </div>
 </section>
@@ -611,16 +611,16 @@
 <div class="divider"></div>
 
 <section id="maska">
-  <p class="section-label">// address indirection layer</p>
-  <h2>Where You Are Found Is Not Where You Live</h2>
+  <p class="section-label">// sloj adresne indirekcije</p>
+  <h2>Gdje te nalaze nije gdje živiš</h2>
 
   <p class="maska-intro">
-    EHO6 proves <strong>who</strong> a node is. MASKA decides <strong>where</strong> it can be
-    reached &mdash; and keeps that answer out of DNS. A static <code>A</code> record is a fact
-    with no author and no expiry: whoever changes it has changed the truth. MASKA replaces it
-    with a <strong>signed claim that expires</strong>, and moves the real location out of the
-    public record entirely. The DNS name stays exactly where it is, because search reach is a
-    real requirement &mdash; it is the <em>content</em> of the answer that changes.
+    EHO6 dokazuje <strong>tko</strong> je čvor. MASKA odlučuje <strong>gdje</strong> je dosežljiv
+    &mdash; i taj odgovor drži izvan DNS-a. Statični <code>A</code> zapis je činjenica bez autora
+    i bez roka: tko ga promijeni, promijenio je istinu. MASKA ga zamjenjuje
+    <strong>potpisanom tvrdnjom koja ističe</strong> i stvarnu lokaciju u potpunosti miče iz
+    javnog zapisa. DNS ime ostaje točno gdje jest, jer je doseg u tražilicama stvaran zahtjev
+    &mdash; mijenja se <em>sadržaj</em> odgovora, ne mjesto.
   </p>
 
   <div class="maska-record">
@@ -628,75 +628,75 @@
 <span class="k">loc</span>=<span class="v">wg://217.160.71.124:51820/&lt;key&gt;|https://mirror.example</span> <span class="k">sig</span>=<span class="v">&lt;base64url&gt;</span></code>
   </div>
   <p class="maska-caption">
-    One PELUD record. It extends the GENESIS1 DNS TXT format already in use rather than
-    inventing a new one. Unknown fields, non-canonical spelling, an expired claim, a missing
-    pinned key, or a reserved-but-unimplemented <code>alg</code> (e.g. <code>ml-dsa-65</code>)
-    are all <em>rejected</em> &mdash; never silently accepted. A signature checked with the key from the same record proves
-    nothing, so verification without a pinned key fails by design.
+    Jedan PELUD zapis. Proširuje postojeci GENESIS1 DNS TXT format umjesto da izmišlja novi.
+    Nepoznata polja, nekanonski oblik, istekla tvrdnja, nedostatak pinovanog ključa i rezervirani
+    ali neimplementirani <code>alg</code> (npr. <code>ml-dsa-65</code>) &mdash; sve se
+    <em>odbija</em>, nikad tiho ne prihvaća. Potpis provjeren ključem <em>iz istog zapisa</em> ne
+    dokazuje ništa, pa provjera bez pinovanog ključa namjerno pada.
   </p>
 
   <div class="maska-ladder">
     <div class="maska-phase">
       <span class="maska-phase-code">F1 PELUD</span>
       <div>
-        <h3>Signed, expiring locator record</h3>
-        <p>Ed25519 over a fixed canonical field order, one-hour maximum lifetime, verified
-           against a pinned key. The address stops being a fact and becomes a claim with a
-           deadline.</p>
+        <h3>Potpisani zapis lokacije s rokom</h3>
+        <p>Ed25519 preko fiksnog kanonskog redoslijeda polja, najviše sat vremena trajanja,
+           provjereno protiv pinovanog ključa. Adresa prestaje biti činjenica i postaje tvrdnja
+           s rokom.</p>
       </div>
-      <span class="maska-pill built">Built</span>
+      <span class="maska-pill built">Izgrađeno</span>
     </div>
     <div class="maska-phase">
       <span class="maska-phase-code">F2 dnkd</span>
       <div>
-        <h3>Local resolver for <code>.dnk</code></h3>
-        <p>Name resolution becomes a local function of the host again, the way ARPANET's
-           <code>HOSTS.TXT</code> worked before DNS existed &mdash; but pulled, signed, and
-           expiring. Everything outside <code>.dnk</code> gets <code>REFUSED</code>: a resolver
-           that forwards becomes a proxy for all of your traffic. It installs no CA into the
-           system trust store, ever.</p>
+        <h3>Lokalni razrješitelj za <code>.dnk</code></h3>
+        <p>Razrješenje imena opet postaje lokalna funkcija hosta, onako kako je radio ARPANET-ov
+           <code>HOSTS.TXT</code> prije nego je DNS postojao &mdash; ali povučeno, potpisano i s
+           rokom. Sve izvan <code>.dnk</code> dobiva <code>REFUSED</code>: razrješitelj koji
+           prosljeđuje postaje posrednik kroz koji ide sav tvoj promet. U sistemski trust store
+           ne instalira nikakav CA, nikada.</p>
       </div>
-      <span class="maska-pill built">Built</span>
+      <span class="maska-pill built">Izgrađeno</span>
     </div>
     <div class="maska-phase">
       <span class="maska-phase-code">F3 RIZOM</span>
       <div>
-        <h3>Dual-anchor WireGuard</h3>
-        <p>Replaces a single <code>ssh -R</code> reverse tunnel, which is a user-space TCP
-           session that goes half-open when ISP NAT forgets the mapping &mdash; device alive,
-           tunnel dead, neither side aware. Two anchors, kernel WireGuard, stateless handshake,
-           <code>AllowedIPs</code> restricted to the anchor's <code>/32</code> so ordinary
-           traffic is untouched.</p>
+        <h3>Dvo-sidreni WireGuard</h3>
+        <p>Zamjenjuje jedan <code>ssh -R</code> obrnuti tunel, koji je TCP sjednica u
+           korisničkom prostoru i ostane poluotvorena kad ISP-ov NAT zaboravi mapiranje &mdash;
+           uređaj živ, tunel mrtav, nijedna strana to ne zna. Dva sidra, WireGuard u kernelu,
+           handshake bez stanja, <code>AllowedIPs</code> ograničen na <code>/32</code> sidra pa
+           običan promet ostaje netaknut.</p>
       </div>
-      <span class="maska-pill partial">Tooling built &#183; pilot pending</span>
+      <span class="maska-pill partial">Alat izgrađen &#183; pilot čeka</span>
     </div>
     <div class="maska-phase">
       <span class="maska-phase-code">F4 PROBOD</span>
       <div>
-        <h3>Direct punch through NAT</h3>
-        <p>The anchor runs its own STUN and a signed rendezvous board; peers measure their NAT,
-           exchange signed candidates, punch simultaneously, and hand the winning path to
-           WireGuard only after a handshake actually moves. This is the phase that removes the
-           single point of failure rather than relocating it. The rendezvous service has no
-           route that carries payload &mdash; a test fails if one ever appears.</p>
+        <h3>Izravan probod kroz NAT</h3>
+        <p>Sidro vozi vlastiti STUN i potpisanu oglasnu ploču; strane izmjere svoj NAT, razmijene
+           potpisane kandidate, probijaju istovremeno i pobjednički put predaju WireGuardu tek
+           kad se handshake stvarno pomakne. Ovo je faza koja jedinstvenu točku kvara UKIDA, a ne
+           premješta. Služba susreta nema rutu koja prenosi teret &mdash; test pada ako se ikad
+           pojavi.</p>
       </div>
-      <span class="maska-pill partial">Built &#183; field pilot pending</span>
+      <span class="maska-pill partial">Izgrađeno &#183; pilot na terenu čeka</span>
     </div>
     <div class="maska-phase">
       <span class="maska-phase-code">F5 OGLASNIK</span>
       <div>
-        <h3>K-of-N announcement boards</h3>
-        <p>N registrars, TLDs and jurisdictions with K-of-N consensus before any redirect. The
-           only phase that costs search reach, because it splits one signal across three
-           domains &mdash; so it is conditional, not merely deferred.</p>
+        <h3>K-od-N oglasne ploče</h3>
+        <p>N registrara, TLD-ova i jurisdikcija, uz K-od-N konsenzus prije svakog preusmjeravanja.
+           Jedina faza koja plaća dosegom u tražilicama, jer dijeli jedan signal na tri domene
+           &mdash; zato je uvjetna, a ne samo odgođena.</p>
       </div>
-      <span class="maska-pill none">Not built</span>
+      <span class="maska-pill none">Nije izgrađeno</span>
     </div>
   </div>
 
   <figure class="maska-figure">
     <svg viewBox="0 0 860 260" role="img"
-         aria-label="Before F4 all traffic passes through the anchor, which is a single point of failure. After F4 the anchor only exchanges signed candidates and traffic goes directly between peers.">
+         aria-label="Prije F4 sav promet ide kroz sidro, koje je jedinstvena točka kvara. Nakon F4 sidro samo razmjenjuje potpisane kandidate, a promet ide izravno između strana.">
       <defs>
         <marker id="mk-arrow" viewBox="0 0 10 10" refX="9" refY="5"
                 markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -710,13 +710,13 @@
 
       <!-- lijevo: F3 -->
       <text x="16" y="24" font-size="12" font-family="var(--mono)"
-            fill="currentColor" opacity="0.55">F3 &#183; RIZOM (today)</text>
+            fill="currentColor" opacity="0.55">F3 &#183; RIZOM (danas)</text>
       <rect x="16" y="112" width="104" height="40" rx="8" fill="none"
             stroke="currentColor" stroke-width="1.5"></rect>
-      <text x="68" y="137" font-size="12" text-anchor="middle" fill="currentColor">edge X96</text>
+      <text x="68" y="137" font-size="12" text-anchor="middle" fill="currentColor">rub X96</text>
       <rect x="168" y="112" width="104" height="40" rx="8" fill="none"
             stroke="currentColor" stroke-width="1.5"></rect>
-      <text x="220" y="137" font-size="12" text-anchor="middle" fill="currentColor">anchor</text>
+      <text x="220" y="137" font-size="12" text-anchor="middle" fill="currentColor">sidro</text>
       <rect x="320" y="112" width="88" height="40" rx="8" fill="none"
             stroke="currentColor" stroke-width="1.5"></rect>
       <text x="364" y="137" font-size="12" text-anchor="middle" fill="currentColor">peer</text>
@@ -725,11 +725,11 @@
       <line x1="272" y1="132" x2="316" y2="132" stroke="currentColor" stroke-width="1.5"
             marker-end="url(#mk-arrow)"></line>
       <text x="220" y="96" font-size="11" text-anchor="middle" fill="currentColor"
-            opacity="0.75">all traffic</text>
+            opacity="0.75">sav promet</text>
       <text x="220" y="174" font-size="11" text-anchor="middle" fill="currentColor"
-            opacity="0.55">sees everything</text>
+            opacity="0.55">vidi sve</text>
       <text x="220" y="190" font-size="11" text-anchor="middle" fill="currentColor"
-            opacity="0.55">anchor down = path down</text>
+            opacity="0.55">pad sidra = pad puta</text>
 
       <line x1="440" y1="40" x2="440" y2="230" stroke="currentColor" stroke-width="1"
             opacity="0.25"></line>
@@ -739,13 +739,13 @@
             fill="var(--accent2)">F4 &#183; PROBOD</text>
       <rect x="470" y="152" width="104" height="40" rx="8" fill="none"
             stroke="currentColor" stroke-width="1.5"></rect>
-      <text x="522" y="177" font-size="12" text-anchor="middle" fill="currentColor">edge X96</text>
+      <text x="522" y="177" font-size="12" text-anchor="middle" fill="currentColor">rub X96</text>
       <rect x="672" y="152" width="88" height="40" rx="8" fill="none"
             stroke="currentColor" stroke-width="1.5"></rect>
       <text x="716" y="177" font-size="12" text-anchor="middle" fill="currentColor">peer</text>
       <rect x="560" y="52" width="112" height="40" rx="8" fill="none"
             stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"></rect>
-      <text x="616" y="77" font-size="12" text-anchor="middle" fill="currentColor">anchor</text>
+      <text x="616" y="77" font-size="12" text-anchor="middle" fill="currentColor">sidro</text>
       <line x1="540" y1="148" x2="580" y2="96" stroke="currentColor" stroke-width="1.2"
             stroke-dasharray="4 3" marker-end="url(#mk-arrow)"></line>
       <line x1="700" y1="148" x2="656" y2="96" stroke="currentColor" stroke-width="1.2"
@@ -753,102 +753,101 @@
 
       <line x1="578" y1="172" x2="666" y2="172" stroke="var(--accent2)" stroke-width="2.5"
             marker-end="url(#mk-arrow-direct)" marker-start="url(#mk-arrow-direct)"></line>
-      <text x="622" y="206" font-size="11" text-anchor="middle" fill="var(--accent2)">direct UDP after punch</text>
+      <text x="622" y="206" font-size="11" text-anchor="middle" fill="var(--accent2)">izravan UDP nakon proboda</text>
       <text x="616" y="40" font-size="11" text-anchor="middle" fill="currentColor"
-            opacity="0.75">signed candidates only</text>
+            opacity="0.75">samo potpisani kandidati</text>
       <text x="622" y="228" font-size="11" text-anchor="middle" fill="currentColor"
-            opacity="0.55">anchor down = path survives</text>
+            opacity="0.55">pad sidra = put preživi</text>
     </svg>
     <figcaption>
-      What F4 changes. Until the punch, the anchor carries the traffic and is both the
-      single point of failure and the only place the traffic can be read. After the punch it
-      exchanges signed candidates and nothing else &mdash; and its failure no longer drops an
-      established path. Symmetric NAT (EDM) is the case where the punch cannot work; there the
-      anchor stays a relay, and MASKA reports that instead of claiming success.
+      Što F4 mijenja. Do proboda sidro nosi promet i ujedno je jedinstvena točka kvara i jedino
+      mjesto s kojeg se promet može čitati. Nakon proboda razmjenjuje samo potpisane kandidate
+      &mdash; i njegov pad više ne ruši uspostavljen put. Simetrični NAT (EDM) je slučaj u kojem
+      probod ne može uspjeti; ondje sidro ostaje relej, a MASKA to JAVI umjesto da tvrdi uspjeh.
     </figcaption>
   </figure>
 
   <div class="maska-two">
     <div class="maska-box">
-      <h3>What the network decides, not the code</h3>
+      <h3>O čemu odlučuje mreža, ne kod</h3>
       <ul>
-        <li><b>EIM</b> &mdash; the NAT hands out the same external address regardless of
-            destination, so the address one anchor sees is usable by a third party.
-            <code>Punch possible.</code></li>
-        <li><b>EDM (symmetric)</b> &mdash; a new port per destination. The address the EU anchor
-            sees is valid for nobody else. <code>Relay stays.</code> Reported as EDM, not
-            attempted and quietly downgraded.</li>
-        <li><b>Unknown</b> &mdash; measuring this needs two vantage points on different IP
-            addresses. With one anchor the answer is <code>NEPOZNATO</code>; &ldquo;probably
-            fine&rdquo; is not a measurement.</li>
+        <li><b>EIM</b> &mdash; NAT daje istu vanjsku adresu bez obzira na odredište, pa adresa
+            koju vidi jedno sidro vrijedi i za treću stranu.
+            <code>Probod je moguć.</code></li>
+        <li><b>EDM (simetrični)</b> &mdash; novi port po odredištu. Adresa koju vidi sidro EU ne
+            vrijedi ni za koga drugog. <code>Relej ostaje.</code> Prijavljuje se kao EDM, a ne
+            pokušava pa tiho spušta na nizu razinu.</li>
+        <li><b>Nepoznato</b> &mdash; za ovo mjerenje trebaju dvije točke gledanja na različitim IP
+            adresama. S jednim sidrom odgovor je <code>NEPOZNATO</code>; &bdquo;vjerojatno je u
+            redu&ldquo; nije mjerenje.</li>
       </ul>
     </div>
     <div class="maska-box limits">
-      <h3>What MASKA does not do</h3>
+      <h3>Što MASKA ne radi</h3>
       <ul>
-        <li>It does not remove the <code>A</code> record. No unmodified browser can reach you
-            without DNS, an IP and a route; every alternative trades away reach.</li>
-        <li>It does not install a certificate authority. A local CA would be a key for
-            <em>every</em> site on that device &mdash; real damage, not protection.</li>
-        <li>The chain height in a record is carried, <b>not verified</b> against the chain.</li>
-        <li>There is <b>no key revocation</b> yet; a short expiry limits how long a compromise
-            lasts, not that it happened.</li>
-        <li>The measurement ledger is hash-chained locally but <b>not anchored</b> in the
-            chain, so whoever holds the file could rewrite all of it.</li>
+        <li>Ne uklanja <code>A</code> zapis. Nijedan nepromijenjen preglednik ne može doći do tebe
+            bez DNS-a, IP adrese i rute; svaka alternativa plaća dosegom.</li>
+        <li>Ne instalira vlastiti CA. Lokalni CA bio bi ključ za <em>svaku</em> stranicu na tom
+            uređaju &mdash; stvarna šteta, ne zaštita.</li>
+        <li>Visina lanca u zapisu se <b>prenosi, ali ne provjerava</b> protiv samog lanca.</li>
+        <li>Još <b>nema opoziva ključa</b>; kratak rok ograničava koliko kompromitacija traje, ne
+            i to što se dogodila.</li>
+        <li>Dnevnik mjerenja lokalno je lančan hashevima, ali <b>nije usidren</b> u lanac, pa ga
+            onaj tko drži datoteku može prepisati u cijelosti.</li>
       </ul>
     </div>
   </div>
 
   <p class="maska-measured">
-    Measured on the build host, not estimated: signature <b>4 ms</b> &#183; verification
-    <b>4 ms</b> &#183; full name resolution including PULL <b>14 ms</b> &#183; <b>215 tests</b>,
-    standard library only, no network egress. Ed25519 is checked against RFC&nbsp;8032 &sect;7.1
-    vectors, X25519 against RFC&nbsp;7748 &sect;5.2 plus a cross-check against OpenSSL, and the
-    NAT simulator models RFC&nbsp;4787 mapping and filtering classes &mdash; including the
-    <em>failure</em> cases: a punch through a symmetric NAT fails even when the code is told the
-    NAT is EIM. What is still open is the field pilot on real CGNAT hardware; the pass criterion
-    was set before the measurement: seven days with both paths measured in parallel and no
-    watchdog alarm.
+    Izmjereno na stroju na kojem je građeno, ne procijenjeno: potpis <b>4 ms</b> &#183;
+    provjera <b>4 ms</b> &#183; cijelo razrješenje imena s PULL-om <b>14 ms</b> &#183;
+    <b>215 testova</b>, samo standardna biblioteka, bez izlaza na internet. Ed25519 je provjeren
+    protiv vektora iz RFC&nbsp;8032 &sect;7.1, X25519 protiv RFC&nbsp;7748 &sect;5.2 uz križnu
+    provjeru s OpenSSL-om, a NAT simulator modelira razrede mapiranja i filtriranja iz
+    RFC&nbsp;4787 &mdash; uključujući <em>neuspjele</em> slučajeve: probod kroz simetrični NAT
+    pada i kad se kodu kaže da je NAT tipa EIM. Otvoren ostaje pilot na stvarnom CGNAT-u;
+    kriterij prolaza postavljen je prije mjerenja: sedam dana s oba puta mjerena paralelno i bez
+    ijednog alarma nadzora.
   </p>
 </section>
 
 <!-- ANCHOR STATUS -->
 <section id="anchors">
-  <p class="section-label">// anchor nodes</p>
-  <h2>Active Anchor Network</h2>
+  <p class="section-label">// sidra</p>
+  <h2>Živa mreža sidara</h2>
 
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
-          <th>Node</th>
-          <th>Location</th>
-          <th>Endpoint</th>
-          <th>Status</th>
-          <th>Role</th>
+          <th>Čvor</th>
+          <th>Lokacija</th>
+          <th>Adresa</th>
+          <th>Stanje</th>
+          <th>Uloga</th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td><span style="font-family:var(--mono);font-weight:700;color:var(--accent);">genesis-eu</span></td>
-          <td>Frankfurt, DE</td>
+          <td>Frankfurt, Njemačka</td>
           <td class="mono">genesis.limit-connect.com</td>
-          <td><span class="status-dot status-live">Live</span></td>
-          <td><span class="mono">Anchor A &middot; Primary</span></td>
+          <td><span class="status-dot status-live">Živo</span></td>
+          <td><span class="mono">Sidro A &middot; primarno</span></td>
         </tr>
         <tr>
           <td><span style="font-family:var(--mono);font-weight:700;color:var(--accent);">genesis-de</span></td>
-          <td>Berlin, DE</td>
+          <td>Berlin, Njemačka</td>
           <td class="mono">sati.ink</td>
-          <td><span class="status-dot status-live">Live</span></td>
-          <td><span class="mono">Anchor B &middot; Secondary</span></td>
+          <td><span class="status-dot status-live">Živo</span></td>
+          <td><span class="mono">Sidro B &middot; pričuvno</span></td>
         </tr>
       </tbody>
     </table>
   </div>
 
   <p style="margin-top:1.2rem; color:var(--text2); font-size:0.87rem;">
-    Anchor health endpoints:
+    Zdravlje sidara:
     <a href="https://genesis.limit-connect.com/borg/health.json" target="_blank" style="color:var(--accent); font-family:var(--mono);">genesis-eu</a>
     &nbsp;&middot;&nbsp;
     <a href="https://sati.ink/borg/health.json" target="_blank" style="color:var(--accent); font-family:var(--mono);">genesis-de</a>
@@ -859,23 +858,23 @@
 
 <!-- RESOURCES -->
 <section id="resources">
-  <p class="section-label">// resources</p>
-  <h2>Documentation &amp; Source</h2>
+  <p class="section-label">// materijali</p>
+  <h2>Dokumentacija i izvorni kod</h2>
   <div class="links-row">
     <a class="btn btn-primary" href="https://github.com/ivanbrtan66/eho6-protocol" target="_blank" rel="noopener">
-      &#128279; GitHub Repository
+      &#128279; GitHub repozitorij
     </a>
     <a class="btn btn-outline" href="/quantum/eho6/whitepaper.pdf" target="_blank">
-      &#128196; Whitepaper PDF
+      &#128196; Rad (PDF)
     </a>
     <a class="btn btn-outline" href="/quantum/eho6/install.sh" target="_blank">
-      &#128220; install.sh source
+      &#128220; izvorni kod install.sh
     </a>
     <a class="btn btn-outline" href="https://genesis.limit-connect.com/borg/health.json" target="_blank">
-      &#129658; Anchor Health JSON
+      &#129658; Zdravlje sidara (JSON)
     </a>
     <a class="btn btn-outline" href="https://github.com/ivanbrtan66/eho6-protocol/blob/main/docs/MASKA-FAZE.md" target="_blank" rel="noopener">
-      &#129517; MASKA phases (F1&ndash;F5)
+      &#129517; MASKA faze (F1&ndash;F5)
     </a>
   </div>
 </section>
@@ -883,11 +882,11 @@
 <!-- FOOTER -->
 <footer>
   <span class="footer-brand">EHO6://</span>
-  EHO6 Research Collective 2026 &middot;
+  EHO6 istraživački kolektiv 2026. &middot;
   <a href="https://github.com/ivanbrtan66/eho6-protocol" target="_blank" rel="noopener">GitHub</a> &middot;
-  <a href="/quantum/eho6/whitepaper.pdf" target="_blank">Whitepaper</a> &middot;
-  MIT License &middot;
-  <span style="font-family:var(--mono); font-size:0.78rem; color:var(--text2);">Truth is proven, not claimed.</span>
+  <a href="/quantum/eho6/whitepaper.pdf" target="_blank">Rad</a> &middot;
+  MIT licenca &middot;
+  <span style="font-family:var(--mono); font-size:0.78rem; color:var(--text2);">Istina se dokazuje, ne tvrdi.</span>
 </footer>
 
 <script>
