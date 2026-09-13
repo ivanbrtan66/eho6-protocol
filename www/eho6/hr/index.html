@@ -686,11 +686,14 @@
       <span class="maska-phase-code">F5 OGLASNIK</span>
       <div>
         <h3>K-od-N oglasne ploče</h3>
-        <p>N registrara, TLD-ova i jurisdikcija, uz K-od-N konsenzus prije svakog preusmjeravanja.
-           Jedina faza koja plaća dosegom u tražilicama, jer dijeli jedan signal na tri domene
-           &mdash; zato je uvjetna, a ne samo odgođena.</p>
+        <p>N registrara, TLD-ova i jurisdikcija, uz K-od-N konsenzus prije svakog preusmjeravanja:
+           pult preusmjerava tek kad K nezavisnih pultova drži istu potpisanu tvrdnju, pa otmica
+           jedne domene ne mijenja ništa. Konfiguracija odbija K koji nije stroga vecina. Ranija
+           verzija ovog projekta tvrdila je da ova faza plaća dosegom u tražilicama &mdash; ne
+           plaća, sve dok su pultovi <code>noindex</code> preusmjerivaci s
+           <code>rel=canonical</code>, a ne kopije stranice.</p>
       </div>
-      <span class="maska-pill none">Nije izgrađeno</span>
+      <span class="maska-pill partial">Izgrađeno &#183; domene nisu kupljene</span>
     </div>
   </div>
 
@@ -801,7 +804,7 @@
   <p class="maska-measured">
     Izmjereno na stroju na kojem je građeno, ne procijenjeno: potpis <b>4 ms</b> &#183;
     provjera <b>4 ms</b> &#183; cijelo razrješenje imena s PULL-om <b>14 ms</b> &#183;
-    <b>215 testova</b>, samo standardna biblioteka, bez izlaza na internet. Ed25519 je provjeren
+    <b>242 testova</b>, samo standardna biblioteka, bez izlaza na internet. Ed25519 je provjeren
     protiv vektora iz RFC&nbsp;8032 &sect;7.1, X25519 protiv RFC&nbsp;7748 &sect;5.2 uz križnu
     provjeru s OpenSSL-om, a NAT simulator modelira razrede mapiranja i filtriranja iz
     RFC&nbsp;4787 &mdash; uključujući <em>neuspjele</em> slučajeve: probod kroz simetrični NAT

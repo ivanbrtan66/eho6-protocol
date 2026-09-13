@@ -1,7 +1,7 @@
 # MASKA — pet faza uklanjanja SPOF-a iz adresne indirekcije
 
-> Status ovog dokumenta: **F1, F2 i F4 izgrađeni i testirani. F3 izgrađen kao alat,
-> pilot još nije pušten. F5 nije izgrađen.** Gdje piše "nije izgrađeno", to znači
+> Status ovog dokumenta: **F1, F2, F4 i F5 izgrađeni i testirani. F3 izgrađen kao
+> alat, pilot još nije pušten.** Gdje piše "nije izgrađeno", to znači
 > da koda nema — ne da je "skoro gotovo". Gdje piše "dokazano", stoji test koji se
 > može ponovno pokrenuti; gdje dokaza nema, piše što točno nedostaje.
 > Nastavak na `c1570_maska_protokol_nacrt` (DRAFT, prior-art timestamp).
@@ -171,12 +171,62 @@ poštovanje vlastite zastavice, a ne činjenica o mreži.
 modelira razrede iz RFC 4787, ne konkretnu kutiju tvog operatera. To je pilot na
 terenu, isto kao F3.
 
-### F5 — K-od-N oglasnik ❌ nije izgrađeno, i možda se ne smije graditi
+### F5 — OGLASNIK: K-od-N pultovi ✅ izgrađeno, ⏳ domene još nisu kupljene
 
-Tri registrara, tri TLD-a, tri jurisdikcije; 2-od-3 konsenzus prije preusmjeravanja
-(obrazac iz c1496/c1497). Skupo, i **jedina faza koja plaća dosegom**: dijeli Google
-signal na tri domene. Ako je SEO doseg i dalje zahtjev — a u c1570 je bio izričit —
-**F5 se ne gradi.** Ovo je odluka, ne tehnički nedostatak.
+`maska/oglasnik.py`.
+
+**Ispravak ranije tvrdnje.** U c1570 i u prvoj verziji ovog dokumenta stajalo je da
+F5 *"plaća SEO dosegom jer dijeli signal na tri domene"*, pa je faza bila uvjetna.
+Ta tvrdnja vrijedi **samo ako pultovi poslužuju sadržaj** — tada su tri kopije iste
+stranice i tražilica dijeli signal. Ako su pultovi ono što stvarno trebaju biti —
+**`noindex` preusmjerivači** s `rel=canonical` na primarnu domenu — duplikata nema,
+signal se ne dijeli, i cijena nestaje. Uvjet otpada; faza je izgrađena.
+
+Mehanizam SEO-neutralnosti je u kodu i u testu, ne u obećanju: svaki odgovor nosi
+`X-Robots-Tag: noindex, nofollow` i `Link: <primarna>; rel="canonical"`, a
+`/robots.txt` zabranjuje cijeli pult. `test_svaki_odgovor_nosi_noindex_i_canonical`
+provjerava to na svakoj ruti.
+
+**Zašto K-od-N a ne "prvi koji odgovori":** jedan pult kojem je registrar oteo domenu
+inače preusmjerava korisnike kamo hoće. Uz K-od-N pult preusmjerava tek kad **K
+nezavisnih pultova drži istu potpisanu tvrdnju**. Napadač mora oteti K domena kod K
+registrara u K jurisdikcija.
+
+**Ustavno ograničenje koje konfiguracija provjerava: K mora biti stroga većina
+(K > N/2).** Inače dvije razdvojene skupine mogu istovremeno imati po K glasova i
+preusmjeravati na različita mjesta — a to nije konsenzus nego tihi split-brain, ista
+bolest protiv koje F2 brani provjerom suglasnosti. `k=2` od `n=4` se **odbija**.
+
+Ostale odluke i njihovi razlozi:
+
+- **307, nikad 301.** Trajno preusmjeravanje prenosi težinu poveznica i kešira se
+  zauvijek; pokazivač koji se mijenja svakih par minuta ne smije ostaviti trajan trag
+  u tuđem kešu. `301` se odbija u konfiguraciji.
+- **Glasovi se grupiraju po skupu lokatora, ne po visini lanca.** Pult koji kasni 30 s
+  ima manju visinu ali isto odredište — to je slaganje, ne neslaganje. Unutar
+  pobjedničke skupine uzima se najsvježiji potpis.
+- **Bez `http(s)` lokatora nema preusmjeravanja.** Preglednik ne može slijediti
+  `wg://`. Ako konsenzus postoji ali nijedan lokator nije web-adresa, pult to **kaže**
+  (503 s razlogom) umjesto da izmišlja odredište.
+- **Kad konsenzusa nema, pult ne pogađa.** Vraća 503 sa stranicom koja imenuje stanje
+  (`NESUGLASNO` / `NEDOVOLJNO`), koliko glasova je trebalo i gdje se vidi stanje.
+
+**Što je dokazano (`tests/test_oglasnik.py`, tri prava pulta na tri loopback adrese):**
+
+| Postava | Očekivano | Dokazano |
+|---|---|---|
+| sva tri pulta složna | 307 na dogovoreni cilj | ✅ |
+| **jedan pult otet** (njegovo sidro laže) | ostala dva nadglasaju ga; cilj se ne mijenja | ✅ |
+| sva tri različita | 503 `NESUGLASNO`, bez preusmjeravanja | ✅ |
+| dva pulta padnu | 503 `NEDOVOLJNO`, bez preusmjeravanja | ✅ |
+| različita visina, isto odredište | slaganje, ne neslaganje | ✅ |
+| samo `wg://` lokator | 503 s razlogom, bez izmišljenog cilja | ✅ |
+| `k=2` od `n=4` u konfiguraciji | odbijeno (nije stroga većina) | ✅ |
+| dva pulta na istoj domeni | odbijeno (nisu nezavisni izvori) | ✅ |
+| svaka ruta | `noindex` + `canonical` | ✅ |
+
+**Što NIJE napravljeno:** domene kod triju registrara u trima jurisdikcijama nisu
+kupljene. Kod stoji i testiran je; tri domene su odluka i trošak, ne kod.
 
 ---
 
@@ -317,6 +367,23 @@ python3 -m maska.probod --ime x96 --kljuc ~/.eho6/node.key \
 # izlaz 0 = NEPOSREDAN · 1 = RELEJ · 2 = NEPOZNATO (mjerenje nije dovršeno)
 ```
 
+**F5 — pultovi (kad domene postoje):**
+
+```bash
+# na SVAKOM pultu, na njegovoj vlastitoj domeni i kod svog registrara:
+#   /var/lib/maska/oglasnik.json — ploce[] su OSTALI pultovi, k je stroga vecina
+sudo python3 -m maska.oglasnik --provjeri-konfig     # odbija k <= n/2
+sudo python3 -m maska.oglasnik
+
+# provjera odluke bez pokretanja servisa
+python3 -m maska.oglasnik --odluka medijapos.dnk
+# izlaz 0 = preusmjerava (konsenzus), 1 = ne preusmjerava (i kaze zasto)
+
+# dokaz da se pult ne indeksira
+curl -sI https://<pult>/medijapos.dnk | grep -i 'x-robots-tag\|location'
+curl -sS https://<pult>/robots.txt
+```
+
 `dnkd` je odvojena instalacija i ne ovisi o F3:
 
 ```bash
@@ -344,7 +411,11 @@ izvori razilaze, ime se **ne** posluživa. Dostupnost koja poslužuje pogrešnu 
 lošija je od poštenog SERVFAIL-a.
 
 **Druga strana medalje.** F1–F3 su SEO-neutralni: javni DNS ostaje netaknut, `.dnk`
-je dodatni put. F5 nije neutralan i zato je zadnji i uvjetan.
+je dodatni put. Za F5 sam tvrdio da nije neutralan — **to je bilo preusko**. Nije
+neutralan samo ako pultovi poslužuju sadržaj; kao `noindex` preusmjerivači s
+`canonical` na primarnu domenu ne dijele signal. Cijena F5 nije SEO nego **novac i
+pravna izloženost**: tri domene kod tri registrara u tri jurisdikcije treba kupiti,
+obnavljati i braniti.
 
 ---
 
@@ -365,6 +436,12 @@ Tvrdnja bez uvjeta pod kojim pada je marketing. Ovi uvjeti ruše dio gradnje:
    promijeni operater ili oprema.
 6. **Ako probijena veza pada češće nego relej kroz sidro** kroz tjedan paralelnog
    mjerenja → F4 je pogoršanje i vraća se na F3 put.
+7. **Ako tražilica unatoč `noindex` + `canonical` ipak podijeli signal** (mjerljivo:
+   pad pozicija primarne domene ili pojava pulta u indeksu) → moj ispravak je bio
+   kriv, c1570 je bio u pravu, i F5 se gasi.
+8. **Ako K-od-N češće odbija preusmjeriti nego što spriječi otmicu** — to jest, ako
+   je nedostupnost pultova češća od stvarnog napada — konsenzus košta više nego što
+   donosi i K se spušta ili se faza gasi.
 
 ---
 

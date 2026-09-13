@@ -223,13 +223,20 @@ PRIJEVOD += [
     ('<span class="maska-pill partial">Built &#183; field pilot pending</span>',
      '<span class="maska-pill partial">Izgradjeno &#183; pilot na terenu ceka</span>'),
     ("<h3>K-of-N announcement boards</h3>", "<h3>K-od-N oglasne ploce</h3>"),
-    ("""        <p>N registrars, TLDs and jurisdictions with K-of-N consensus before any redirect. The
-           only phase that costs search reach, because it splits one signal across three
-           domains &mdash; so it is conditional, not merely deferred.</p>""",
-     """        <p>N registrara, TLD-ova i jurisdikcija, uz K-od-N konsenzus prije svakog preusmjeravanja.
-           Jedina faza koja placa dosegom u trazilicama, jer dijeli jedan signal na tri domene
-           &mdash; zato je uvjetna, a ne samo odgodjena.</p>"""),
-    ('<span class="maska-pill none">Not built</span>', '<span class="maska-pill none">Nije izgradjeno</span>'),
+    ("""        <p>N registrars, TLDs and jurisdictions with K-of-N consensus before any redirect:
+           a board redirects only when K independent boards hold the same signed claim, so
+           seizing one domain changes nothing. The config refuses a K that is not a strict
+           majority. An earlier version of this project said this phase costs search reach
+           &mdash; it does not, as long as the boards are <code>noindex</code> redirectors
+           with <code>rel=canonical</code> rather than copies of the site.</p>""",
+     """        <p>N registrara, TLD-ova i jurisdikcija, uz K-od-N konsenzus prije svakog preusmjeravanja:
+           pult preusmjerava tek kad K nezavisnih pultova drzi istu potpisanu tvrdnju, pa otmica
+           jedne domene ne mijenja nista. Konfiguracija odbija K koji nije stroga vecina. Ranija
+           verzija ovog projekta tvrdila je da ova faza placa dosegom u trazilicama &mdash; ne
+           placa, sve dok su pultovi <code>noindex</code> preusmjerivaci s
+           <code>rel=canonical</code>, a ne kopije stranice.</p>"""),
+    ('<span class="maska-pill partial">Built &#183; domains not bought</span>',
+     '<span class="maska-pill partial">Izgradjeno &#183; domene nisu kupljene</span>'),
 
     # dijagram
     ('fill="currentColor" opacity="0.55">F3 &#183; RIZOM (today)</text>',
@@ -305,7 +312,7 @@ PRIJEVOD += [
      """        <li>Dnevnik mjerenja lokalno je lancan hashevima, ali <b>nije usidren</b> u lanac, pa ga
             onaj tko drzi datoteku moze prepisati u cijelosti.</li>"""),
     ("""    Measured on the build host, not estimated: signature <b>4 ms</b> &#183; verification
-    <b>4 ms</b> &#183; full name resolution including PULL <b>14 ms</b> &#183; <b>215 tests</b>,
+    <b>4 ms</b> &#183; full name resolution including PULL <b>14 ms</b> &#183; <b>242 tests</b>,
     standard library only, no network egress. Ed25519 is checked against RFC&nbsp;8032 &sect;7.1
     vectors, X25519 against RFC&nbsp;7748 &sect;5.2 plus a cross-check against OpenSSL, and the
     NAT simulator models RFC&nbsp;4787 mapping and filtering classes &mdash; including the
@@ -315,7 +322,7 @@ PRIJEVOD += [
     watchdog alarm.""",
      """    Izmjereno na stroju na kojem je gradjeno, ne procijenjeno: potpis <b>4 ms</b> &#183;
     provjera <b>4 ms</b> &#183; cijelo razrjesenje imena s PULL-om <b>14 ms</b> &#183;
-    <b>215 testova</b>, samo standardna biblioteka, bez izlaza na internet. Ed25519 je provjeren
+    <b>242 testova</b>, samo standardna biblioteka, bez izlaza na internet. Ed25519 je provjeren
     protiv vektora iz RFC&nbsp;8032 &sect;7.1, X25519 protiv RFC&nbsp;7748 &sect;5.2 uz kriznu
     provjeru s OpenSSL-om, a NAT simulator modelira razrede mapiranja i filtriranja iz
     RFC&nbsp;4787 &mdash; ukljucujuci <em>neuspjele</em> slucajeve: probod kroz simetricni NAT

@@ -130,7 +130,7 @@ state, known limits and falsification criteria): [`docs/MASKA-FAZE.md`](docs/MAS
 | **F2 `dnkd`** | Local `.dnk` resolver: PULL + Ed25519 verify + split-brain check + stable RFC 6598 address | **built** (`maska/dnkd.py`) |
 | **F3 RIZOM** | Dual-anchor WireGuard replacing single `ssh -R` reverse tunnels | **tooling built**, pilot not yet deployed |
 | **F4 PROBOD** | Own STUN + signed rendezvous board + simultaneous punch, then WireGuard endpoint handover — the phase that actually removes the SPOF | **built**, field pilot pending |
-| **F5 K-of-N board** | N registrars / TLDs / jurisdictions, K-of-N consensus | **not built** (costs SEO reach — conditional) |
+| **F5 OGLASNIK** | N registrars / TLDs / jurisdictions, K-of-N consensus before any redirect | **built**, domains not yet bought |
 
 ### PELUD record
 
@@ -222,6 +222,34 @@ authenticates by key, not by address, and probes are Ed25519-signed. Handover to
 WireGuard counts as successful only when `latest-handshakes` actually moves; otherwise
 the endpoint is reverted to the anchor and the verdict is `RELEJ`.
 
+### OGLASNIK — K-of-N boards (F5)
+
+A board is a cheap, replaceable public entrance on an independent domain, at a
+different registrar, in a different jurisdiction. It is **not** a copy of the site and
+never the source of truth about location.
+
+One hijacked board must not be able to redirect anyone: a board redirects only when
+**K independent boards hold the same signed claim**. An attacker has to seize K domains
+at K registrars in K jurisdictions.
+
+```bash
+sudo python3 -m maska.oglasnik --provjeri-konfig   # rejects k <= n/2
+sudo python3 -m maska.oglasnik
+python3 -m maska.oglasnik --odluka medijapos.dnk   # exit 0 = redirects, 1 = refuses (and says why)
+```
+
+**The config enforces K > N/2 (strict majority).** Otherwise two disjoint groups could
+each reach K and redirect to different places — that is not consensus, it is a quiet
+split-brain. `k=2` of `n=4` is refused.
+
+**This does not cost search reach.** An earlier version of this project claimed it did.
+That holds only if the boards serve content — three copies of one page split the signal.
+As `noindex` redirectors carrying `Link: <primary>; rel="canonical"`, with `/robots.txt`
+disallowing the whole board, there is no duplicate and no split. Every route is checked
+for those headers in the test suite. Redirects are `307`, never `301`: a permanent
+redirect transfers link equity and is cached forever, and a pointer that changes every
+few minutes must not leave a permanent trace in someone else's cache.
+
 ### GODOVI measurement ledger
 
 Every resolution — successful, failed, or unmeasurable — is appended as a
@@ -233,8 +261,8 @@ python3 -m maska.godovi /var/lib/maska/godovi.jsonl
 
 ### Tests
 
-215 tests, standard library only, no network egress (anchors run on loopback, NAT
-behaviour in a simulator).
+242 tests, standard library only, no network egress (anchors, boards and STUN run on
+loopback; NAT behaviour in a simulator).
 Ed25519 is checked against RFC 8032 §7.1 vectors, X25519 against RFC 7748 §5.2 and
 cross-checked against `openssl`, and interoperability with `eho6_node.py` signatures
 is asserted. The NAT simulator models RFC 4787 mapping/filtering classes and proves

@@ -264,11 +264,14 @@ SEKCIJA = OZNAKA + """
       <span class="maska-phase-code">F5 OGLASNIK</span>
       <div>
         <h3>K-of-N announcement boards</h3>
-        <p>N registrars, TLDs and jurisdictions with K-of-N consensus before any redirect. The
-           only phase that costs search reach, because it splits one signal across three
-           domains &mdash; so it is conditional, not merely deferred.</p>
+        <p>N registrars, TLDs and jurisdictions with K-of-N consensus before any redirect:
+           a board redirects only when K independent boards hold the same signed claim, so
+           seizing one domain changes nothing. The config refuses a K that is not a strict
+           majority. An earlier version of this project said this phase costs search reach
+           &mdash; it does not, as long as the boards are <code>noindex</code> redirectors
+           with <code>rel=canonical</code> rather than copies of the site.</p>
       </div>
-      <span class="maska-pill none">Not built</span>
+      <span class="maska-pill partial">Built &#183; domains not bought</span>
     </div>
   </div>
 """ + DIJAGRAM + """
@@ -305,7 +308,7 @@ SEKCIJA = OZNAKA + """
 
   <p class="maska-measured">
     Measured on the build host, not estimated: signature <b>4 ms</b> &#183; verification
-    <b>4 ms</b> &#183; full name resolution including PULL <b>14 ms</b> &#183; <b>215 tests</b>,
+    <b>4 ms</b> &#183; full name resolution including PULL <b>14 ms</b> &#183; <b>242 tests</b>,
     standard library only, no network egress. Ed25519 is checked against RFC&nbsp;8032 &sect;7.1
     vectors, X25519 against RFC&nbsp;7748 &sect;5.2 plus a cross-check against OpenSSL, and the
     NAT simulator models RFC&nbsp;4787 mapping and filtering classes &mdash; including the
