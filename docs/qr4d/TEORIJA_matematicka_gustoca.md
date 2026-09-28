@@ -148,3 +148,63 @@ Generički Slepian-Wolf nad **payloadom** daje malo — payload je već malen, a
 ## Sljedeći najjeftiniji pokus (revidiran, pred-registriran)
 Ne mjeriti generički `H(X|Y)` nego **pokrivenost lokalne replike**: na n≥30 stvarnih skeniranja izmjeri udio dokumenata koji SU u lokalnoj replici lanca u trenutku čitanja.
 **Kriterij (fiksiran):** ako je donja granica 95 % CI te pokrivenosti ≥ 0,80 → dvorežimski kod isplativ (režim A pokriva većinu), i tada prstenovi u prosjeku gube ≥ 75 B fiksne režije. Ispod 0,80 → režim A je rijedak, ostaje puni kod; teza pada i to se zapisuje.
+
+---
+
+# REŽIM A — q4d kao ŽIVI PROZOR U ATOM (konkretan nacrt, aditivan)
+
+> Ivanov naglasak (28.09.): q4d već čita i prikazuje podatke IZ atoma, nije spremište. Srce je content-hash adresa → kod je već vezan za atom. Ne pišemo sve u točkice; proširujemo funkciju veze. Bez narušavanja ičega (Z0/pravilo 12, pravilo 9/20).
+> Izmjereno iz koda: adresa = `base32(sha3-256("EHO10-4D::"+tip+podaci0))[:10]` (16 znakova); `presudi()` već provjerava da srce i prsten 0 pripadaju istom dokumentu; H11f/H11g već upisuju svako skeniranje. Dakle veza i zapis skeniranja POSTOJE — gradimo na njima.
+
+## 0. Preokret okvira
+Problem gustoće je krivo postavljen čim prihvatiš da je q4d **ručka na atom**. Papir ne mora rasti — **atom raste**. Fizika ostaje minimalna (srce-adresa + prstenovi kao offline dokaz), funkcionalnost raste u sloju atoma. Prstenovi prestaju biti „sve o dokumentu" i postaju **sidro vezanja** (srce↔atom↔verzija), a sadržaj/rast/status žive u atomu.
+
+## 1. Što se NE dira (invarijanta izolacije)
+- `kod4d.py` bitovi, `sastavi`/`dekodiraj`, Rust jezgra, zlatni testovi — **bit-identično, netaknuto**.
+- `srce` (standardni QR) i postojeći čitač — netaknuti; stari kodovi čitaju se isto.
+- Novi sloj je **isključivo aditivan**: novi resolver + novi endpoint + neobavezno polje u prstenu 0. Dokument bez novog polja radi kao danas (unatražna kompatibilnost).
+
+## 2. Resolver adresa→atom (jezgra režima A), trostanje + offline-first
+Redoslijed razrješenja (Z17 PULL, Z40, Z53):
+1. **Lokalna replika lanca** (uređaj/rubni čvor) — traži atom po adresi. Pogodak → izvor istine, radi offline.
+2. **Fleet pull** (ako ima mreže) — genesis EU `/borg/...` ili DokArh po adresi.
+3. **Samo prstenovi** (režim B, hladno) — puni samostalni dokaz s papira.
+Presuda uvijek trostanje: **DRŽI** (atom nađen i vezanje potvrđeno) / **ALARM** (vezanje ne valja — podmetnut atom/srce) / **NEPOZNATO** (replika stara ili atom nedostupan → padni na režim B, nikad lažni DRŽI).
+
+## 3. Vezanje i anti-replay (jedini novi bit na papiru, minimalan)
+Opasnost pokazivača: netko upre kod u drugi/noviji atom (rebind) ili vrati stari (replay/opozvano→valjano).
+- **Srce↔atom** vezanje već postoji (adresa = hash prstena 0).
+- Dodaje se **neobavezno polje u CBOR prstena 0**: `v` = visina/verzija atoma na koju je kod pečaćen (logički sat lanca, ne zidni — kao `intent.py`). Čitač: atom mora imati tu visinu u svojoj povijesti; **starija replika bez te visine → NEPOZNATO** (traži svježiju), **atom s drugom granom → ALARM**.
+- Time je режим A jednako otporan na replay kao režim B, a ne troši više od nekoliko bajtova u prstenu koji ionako postoji.
+- **Ništa staro se ne mijenja**: `v` je opcionalan ključ; dokument bez njega ponaša se kao danas (samo srce↔ring0 vezanje).
+
+## 4. Nova funkcionalnost koju veza otključava (sve u sloju atoma, 0 novih točkica)
+| Sposobnost | Kako | Dodiruje |
+|---|---|---|
+| **Živi prikaz** | resolver renderira TRENUTNO stanje atoma (faze, polja) | samo atom + prikaz |
+| **Rast bez reprinta** | nove faze u atomu → isti kod pokazuje više („na rate" kroz vezu, ne kroz tisak) | samo atom |
+| **Opoziv / status** | atom nosi `status` (valjan/opozvan/istekao); skeniranje pokazuje uživo | samo atom |
+| **Selektivno otkrivanje** | atom drži polja s vidljivošću po ulozi; q4d renderira pogled po čitaču (javni/vlasnik) | atom + prikaz |
+| **Akumulacija povijesti** | skeniranje dopisuje događaj u atom (H11f/H11g VEĆ to rade — poopćiti) | postojeći zapis |
+
+Opoziv i živi status su najveći dobitak: **tiskani kod koji se može opozvati i koji sam raste** — papir to inače ne može.
+
+## 5. Pet kutova
+- **Ispod radara:** H11f/H11g već pišu skeniranja u zapis — infrastruktura „kod akumulira povijest" već postoji, samo je uska.
+- **U stranu:** isto kao DNS/URL naspram ugrađenog sadržaja — pokazivač + živo razrješenje; mi dodajemo kriptografsko vezanje na verziju.
+- **Dron:** granica sad nije gustoća nego **svježina replike**; mjerni cilj se seli s „koliko točaka" na „koliki udio čitanja ima atom lokalno".
+- **Iza kulisa:** izvor istine mora biti atom (DokArh), ne demo sqlite `db()` — Korak Nula (§7) to mora potvrditi prije tvrdnje.
+- **Druga strana medalje:** pokazivač bez atoma je prazan; zato prstenovi (režim B) OSTAJU obavezni kao offline dokaz. Režim A je ubrzanje i proširenje, ne zamjena.
+
+## 6. Usporedba i jedinstvenost
+Standardni QR/URL: pokazivač bez offline dokaza (mreža obavezna, nema kriptografskog vezanja). Ugrađeni potpisani kod (današnji q4d, režim B): offline dokaz ali statičan. **Režim A spaja oba: živ i vezan I offline-dokaziv** — jer imamo repliciran lanac + prstenove kao rezervu. To nitko drugi nema jer nitko nema repliciran DokArh u čitaču.
+
+## 7. Korak Nula prije koda (jedan otvoreni)
+Potvrditi izvor istine u produkciji: čita li `dokument(adr)` iz DokArh atoma ili iz demo sqlite `db()`. Ako je sqlite demo → prvi zadatak je resolver na atom, ne nova sposobnost.
+
+## 8. Najjeftiniji pokus (pred-registriran)
+Na n≥30 stvarnih skeniranja izmjeri: (a) udio s pogotkom u lokalnoj replici (režim A moguć), (b) 0 lažnih DRŽI na podmetnut/star atom uz polje `v`.
+**Kriterij (fiksiran):** lažni DRŽI = 0 (tvrdo) I donja granica 95 % CI pokrivenosti ≥ 0,80 → režim A se pušta kao zadani, režim B kao fallback. Lažni DRŽI > 0 → vezanje `v` nije dovoljno, staje se.
+
+## 9. Deset riječi / 2050
+Dokazuje: **ŽIV** (kod raste s atomom), **SAMOISCJELJUJUĆ** (opoziv/ispravak u atomu bez reprinta), **DOKAZIV** (vezanje + prstenovi). 2050: papir je trajno sidro; sve živo je u lancu; isti otisnuti kod danas nosi dokument kakav bude za 11 godina.
