@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="hr" data-tema="tamna">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>QR4D — živi prozor u atom</title>
+<meta name="description" content="q4d nije spremište nego živi, vezani prozor u izvor istine. Fizičku gustoću zaobilazimo, ne pobjeđujemo: dvorežimski kod (indeks u živi izvor + offline prstenovi). Izmjereno iz koda, hipoteze jasno označene.">
+<!-- GDS standard prikaza: /gds/genesis-tokens.css. Tokeni su ugrađeni doslovno da stranica radi i samostalno i na /prez/. -->
+<style>
+/* genesis-tokens.css v1 — GDS jedan izvor istine (c1908/c1911), ugrađeno doslovno */
+:root,[data-tema="tamna"],[data-theme="dark"]{
+  --boja-pozadina:#0d1117;--boja-pozadina-2:#151b26;--boja-povrsina:#1c2333;
+  --boja-tekst:#f0f2f8;--boja-tekst-2:#c3c9dc;--boja-tekst-3:#98a1b8;
+  --boja-akcija:#ff5c77;--boja-akcija-podloga:#c21e40;--boja-tekst-na-akciji:#ffffff;
+  --boja-uspjeh:#4ade80;--boja-uspjeh-podloga:#14532d;--boja-greska:#ff8095;--boja-greska-podloga:#7f1d2d;
+  --boja-upozorenje:#fbbf24;--boja-upozorenje-podloga:#78350f;--boja-info:#7dd3fc;--boja-rub:rgba(255,255,255,.12);
+  --font-osnovni:-apple-system,'Segoe UI',Roboto,'Noto Sans',sans-serif;--font-mono:'JetBrains Mono','Cascadia Code',monospace;
+  --tekst-xs:.72rem;--tekst-s:.85rem;--tekst-m:1rem;--tekst-l:1.25rem;--tekst-xl:1.7rem;
+  --radijus-s:7px;--radijus-m:12px;--radijus-l:18px;
+  --sjena-1:0 1px 4px rgba(0,0,0,.25);--sjena-2:0 6px 24px rgba(0,0,0,.35);
+}
+[data-tema="svijetla"],[data-theme="light"]{
+  --boja-pozadina:#f5f6fa;--boja-pozadina-2:#ffffff;--boja-povrsina:#eceef5;
+  --boja-tekst:#1a1f36;--boja-tekst-2:#3d445f;--boja-tekst-3:#555d7a;
+  --boja-akcija:#b3123a;--boja-akcija-podloga:#c21e40;--boja-tekst-na-akciji:#ffffff;
+  --boja-uspjeh:#15803d;--boja-uspjeh-podloga:#dcfce7;--boja-greska:#b91c1c;--boja-greska-podloga:#fee2e2;
+  --boja-upozorenje:#92400e;--boja-upozorenje-podloga:#fef3c7;--boja-info:#1d4ed8;--boja-rub:rgba(20,25,50,.14);
+  --sjena-1:0 1px 4px rgba(20,25,50,.10);--sjena-2:0 6px 24px rgba(20,25,50,.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--boja-pozadina);color:var(--boja-tekst);font-family:var(--font-osnovni);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.wrap{max-width:1100px;margin:0 auto;padding:0 clamp(16px,5vw,56px)}
+a{color:var(--boja-info)}
+.traka{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--boja-pozadina) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--boja-rub)}
+.traka .wrap{display:flex;align-items:center;gap:1rem;min-height:52px}
+.logo{font-weight:800;white-space:nowrap}.logo b{color:var(--boja-akcija)}
+.traka nav{display:flex;gap:.9rem;font-size:.875rem;overflow-x:auto;white-space:nowrap;scrollbar-width:none;min-width:0;flex:1}
+.traka nav::-webkit-scrollbar{display:none}
+.traka nav a{color:var(--boja-tekst-2);text-decoration:none}
+.tema{margin-left:auto;flex:none;background:var(--boja-povrsina);color:var(--boja-tekst);border:1px solid var(--boja-rub);border-radius:var(--radijus-s);padding:.3rem .7rem;cursor:pointer;font:inherit;font-size:.875rem}
+button:focus-visible,a:focus-visible{outline:3px solid var(--boja-info);outline-offset:2px}
+.hero{padding:clamp(48px,9vw,100px) 0 clamp(32px,5vw,60px);border-bottom:1px solid var(--boja-rub);position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 55% 55% at 85% 20%,color-mix(in srgb,var(--boja-akcija) 14%,transparent),transparent 70%),radial-gradient(ellipse 50% 50% at 5% 95%,color-mix(in srgb,var(--boja-uspjeh) 12%,transparent),transparent 70%);pointer-events:none}
+.oznaka{font-family:var(--font-mono);font-size:var(--tekst-xs);letter-spacing:.12em;text-transform:uppercase;color:var(--boja-akcija)}
+h1{font-size:clamp(2.1rem,6vw,3.8rem);line-height:1.08;letter-spacing:-.02em;margin:.5rem 0 1rem;max-width:20ch}
+h2{font-size:clamp(1.5rem,3.4vw,2.2rem);line-height:1.2;letter-spacing:-.01em;margin-bottom:.8rem}
+h3{font-size:1.05rem;margin-bottom:.35rem}
+.uvod{font-size:clamp(1.05rem,2vw,1.22rem);color:var(--boja-tekst-2);max-width:64ch}
+section{padding:clamp(44px,7vw,84px) 0;border-bottom:1px solid var(--boja-rub)}
+section>.wrap>p{color:var(--boja-tekst-2);max-width:70ch;margin-bottom:1rem}
+.brojke{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-top:2rem}
+.brojka{background:var(--boja-povrsina);border:1px solid var(--boja-rub);border-radius:12px;padding:1rem}
+.brojka b{display:block;font-size:clamp(1.6rem,4vw,2.2rem);line-height:1.1;font-variant-numeric:tabular-nums}
+.brojka span{font-size:.85rem;color:var(--boja-tekst-2)}
+.dvoje{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1.5rem;align-items:start;margin-top:1.2rem}
+@media (max-width:820px){.dvoje{grid-template-columns:1fr}}
+.ploca{background:var(--boja-povrsina);border:1px solid var(--boja-rub);border-radius:12px;padding:1.1rem;min-width:0}
+.os{display:grid;grid-template-columns:4.2em 1fr;gap:.2rem .8rem;padding:.7rem 0;border-bottom:1px solid var(--boja-rub)}.os:last-child{border:0}
+.os .s{font-family:var(--font-mono);font-weight:800;color:var(--boja-akcija);font-size:1.02rem}
+.os p{color:var(--boja-tekst-2);font-size:.93rem}
+.tablica{overflow-x:auto;margin-top:1.2rem;border:1px solid var(--boja-rub);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.92rem}
+th,td{text-align:left;padding:.65rem .8rem;border-bottom:1px solid var(--boja-rub);vertical-align:top}
+th{background:var(--boja-pozadina-2);font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--boja-tekst-2)}
+tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums}
+.znacka{display:inline-block;font-family:var(--font-mono);font-size:.72rem;font-weight:700;padding:.15rem .5rem;border-radius:999px;white-space:nowrap}
+.znacka.ok{background:var(--boja-uspjeh-podloga);color:var(--boja-uspjeh)}
+.znacka.pad{background:var(--boja-greska-podloga);color:var(--boja-greska)}
+.znacka.upoz{background:var(--boja-upozorenje-podloga);color:var(--boja-upozorenje)}
+.znacka.siva{background:var(--boja-pozadina-2);color:var(--boja-tekst-3)}
+.iskreno{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin-top:1.2rem}
+.kutija{border-left:4px solid var(--boja-upozorenje);background:var(--boja-povrsina);border-radius:8px;padding:1rem 1.1rem}
+.kutija.z{border-left-color:var(--boja-uspjeh)}
+.kutija.r{border-left-color:var(--boja-akcija)}
+.kutija h3{margin-bottom:.4rem}
+.kutija p{color:var(--boja-tekst-2);font-size:.93rem}
+.kartice{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin-top:1.4rem}
+.kartica{background:var(--boja-povrsina);border:1px solid var(--boja-rub);border-radius:12px;padding:1.1rem}
+.kartica .s{font-family:var(--font-mono);color:var(--boja-akcija);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase}
+.kartica p{color:var(--boja-tekst-2);font-size:.92rem;margin-top:.3rem}
+code{font-family:var(--font-mono);font-size:.88em;background:var(--boja-pozadina-2);padding:.05rem .35rem;border-radius:4px;overflow-wrap:anywhere}
+ul.cist{list-style:none;margin-top:.8rem;display:grid;gap:.5rem}
+ul.cist li{padding-left:1.4rem;position:relative;color:var(--boja-tekst-2);font-size:.95rem}
+ul.cist li::before{content:"→";position:absolute;left:0;color:var(--boja-akcija);font-weight:700}
+footer{padding:2.5rem 0 3.5rem;color:var(--boja-tekst-3);font-size:.85rem}
+footer a{color:var(--boja-tekst-2)}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<header class="traka"><div class="wrap">
+  <div class="logo">QR<b>4D</b> · živi prozor</div>
+  <nav aria-label="Poglavlja"><a href="#problem">Problem</a><a href="#preokret">Preokret</a><a href="#izvor">Izvor istine</a><a href="#sposobnosti">Sposobnosti</a><a href="#servis">Servis</a><a href="#iskreno">Iskreno</a></nav>
+  <button class="tema" id="tema" type="button" aria-label="Promijeni temu">◐ Tema</button>
+</div></header>
+
+<main>
+<div class="hero"><div class="wrap">
+  <div class="oznaka">eho6-protocol · modul <code>qr_eho10_4dimenzije</code> · elaboracija 28.09.2026</div>
+  <h1>q4d nije spremište — nego živi prozor u atom</h1>
+  <p class="uvod">Fizičku granicu gustoće točkica ne pobjeđujemo, nego je <b>zaobiđemo</b>. Kod prestaje nositi cijeli dokument i postaje <b>vezani pokazivač na izvor istine</b>, uz prstenove kao offline dokaz. Papir ne raste — <b>atom raste</b>. Brojke ispod izmjerene su iz živog koda; hipoteze su jasno označene.</p>
+  <div class="brojke">
+    <div class="brojka"><b>1</b><span>bit po točki danas (mala/velika ili točka/praznina)</span></div>
+    <div class="brojka"><b>75 B</b><span>fiksne kripto-režije po prstenu, neovisno o payloadu</span></div>
+    <div class="brojka"><b>512</b><span>točaka samo za Ed25519 potpis (≈ 33 % prstena)</span></div>
+    <div class="brojka"><b>2</b><span>režima: A = indeks u živi izvor · B = offline dokaz</span></div>
+  </div>
+</div></div>
+
+<section id="problem"><div class="wrap">
+  <div class="oznaka">Korak Nula · izmjereno iz <code>kod4d.py</code></div>
+  <h2>Prava granica nije mjesto — nego režija</h2>
+  <p>Kapacitet je <code>C = A · b_po_točki · r</code> (površina × bita po točki × pouzdanost). Lanac već napada bita po točki fizički (točka/praznina, velika/mala) i tu je strop. Mjerenje pokazuje da usko grlo <b>nije payload</b>, nego <b>fiksna kriptografska režija po prstenu</b>: tip+len (3 B) + potpis Ed25519 (64 B) + lanac (8 B) = 75 B, prije ijednog korisnog bajta.</p>
+  <div class="tablica"><table>
+    <thead><tr><th>podaci</th><th>tijelo</th><th>točaka</th><th>pojaseva</th><th>režija</th></tr></thead>
+    <tbody>
+      <tr><td class="num">16 B</td><td class="num">91 B</td><td class="num">1176</td><td class="num">6</td><td><span class="znacka pad">82 %</span></td></tr>
+      <tr><td class="num">50 B</td><td class="num">125 B</td><td class="num">1544</td><td class="num">7</td><td><span class="znacka pad">60 %</span></td></tr>
+      <tr><td class="num">100 B</td><td class="num">175 B</td><td class="num">3648</td><td class="num">10</td><td><span class="znacka upoz">43 %</span></td></tr>
+      <tr><td class="num">300 B</td><td class="num">375 B</td><td class="num">5376</td><td class="num">12</td><td><span class="znacka ok">20 %</span></td></tr>
+    </tbody>
+  </table></div>
+  <p style="margin-top:1rem;font-size:.9rem">Izračunato deterministički iz konstanti (K=40, N0=16, RS 35 %, opis 24 B). Potpis je pseudoslučajan — bočna informacija ga <b>ne</b> stlačuje; zato ga se ne komprimira, nego premješta iz papira u lanac.</p>
+</div></section>
+
+<section id="preokret"><div class="wrap">
+  <div class="oznaka">Ideja</div>
+  <h2>Dvorežimski kod: iste točke, dva života</h2>
+  <p>Srce je već content-hash adresa (<code>base32(sha3-256("EHO10-4D::"+tip+podaci0))[:10]</code>) — kod je <b>već vezan</b> za dokument. Zato ne guramo sadržaj u točkice; proširujemo što veza radi.</p>
+  <div class="dvoje">
+    <div class="ploca">
+      <div class="os"><span class="s znacka ok" style="align-self:start">A</span><div><h3>Živi izvor</h3><p>Dokument je u lokalnoj replici lanca → prstenovi nose samo indeks. Čita se malo točaka. Prikaz je uvijek svjež (faze, status).</p></div></div>
+      <div class="os"><span class="s">B</span><div><h3>Offline dokaz</h3><p>Hladan ili nov dokument → prstenovi nose puni samostalni dokaz, kao danas. Radi bez mreže i bez replike.</p></div></div>
+      <div class="os"><span class="s">spoj</span><div><h3>Rateless</h3><p>Iste fizičke točke služe oba: pročitaš malo za A, sve za B. „Na rate" (Structured Append) je prirodni nosač.</p></div></div>
+    </div>
+    <div class="ploca">
+      <h3>Zašto je to zaobilazak, ne pobjeda</h3>
+      <p style="color:var(--boja-tekst-2);font-size:.95rem;margin-top:.5rem">Informacijsko-teorijski strop <code>C = A·b·r</code> se ne vara. Ali ako uređaj već drži repliciran lanac, onda su <b>potpis i sadržaj bočna informacija</b> — već ih ima lokalno. Tada papir ne mora nositi 75 B režije po prstenu; nosi pokazivač, a dokaz je u lancu.</p>
+      <ul class="cist">
+        <li>Papir minimalan, trajan — sidro.</li>
+        <li>Sadržaj i rast — u atomu.</li>
+        <li>Offline i dalje radi (režim B).</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section id="izvor"><div class="wrap">
+  <div class="oznaka">Korak Nula · izmjereno</div>
+  <h2>Gdje je izvor istine</h2>
+  <p>Provjereno u kodu: q4d danas čita <b>demo sqlite</b> (testna faza, namjerno). DokArh atom <b>nije</b> dokument — on je notar izmjene koda (<code>putanja + hash_prije/poslije + visina</code>). Pravi izvor poslovnog dokumenta je <b>arhiva-core</b>.</p>
+  <div class="tablica"><table>
+    <thead><tr><th>sloj</th><th>što drži</th><th>ključ / dokaz</th><th>uloga za q4d</th></tr></thead>
+    <tbody>
+      <tr><td>q4d demo baza</td><td>3 demo dokumenta</td><td>testni ključ</td><td><span class="znacka siva">test faza</span></td></tr>
+      <tr><td>DokArh lanac</td><td>izmjene koda</td><td><code>hash_prije/poslije, visina</code></td><td><span class="znacka upoz">notar koda, ne dokument</span></td></tr>
+      <tr><td>arhiva-core</td><td>poslovni dokumenti</td><td><code>weise3_id, pecat_hash, tsa</code></td><td><span class="znacka ok">izvor istine</span></td></tr>
+    </tbody>
+  </table></div>
+  <p style="margin-top:1rem">Spoj je aditivan i bez diranja sheme arhiva-core: zaseban q4d indeks <code>adresa → weise3_id</code> + resolver <code>qr4d/izvor.py</code> iza zastavice; demo ostaje fallback. Trostanje: <span class="znacka ok">DRŽI</span> <span class="znacka pad">ALARM</span> <span class="znacka siva">NEPOZNATO</span> — nikad lažni DRŽI.</p>
+</div></section>
+
+<section id="sposobnosti"><div class="wrap">
+  <div class="oznaka">Bez novih točkica</div>
+  <h2>Što veza otključava — a već postoji u arhiva-core</h2>
+  <p>Sve sposobnosti „živog" koda već su stupci u <code>arhiva_core_dokumenti</code>. Ne grade se — čitaju se.</p>
+  <div class="tablica"><table>
+    <thead><tr><th>sposobnost</th><th>postojeći stupac</th></tr></thead>
+    <tbody>
+      <tr><td>Živi prikaz / rast bez reprinta</td><td><code>faza</code>, <code>izmijenjen</code></td></tr>
+      <tr><td>Opoziv / zaborav po volji</td><td><code>spaljivanje_status</code>, <code>retain_until</code></td></tr>
+      <tr><td>Svježina / anti-replay</td><td><code>pecat_hash</code>, <code>tsa_token</code></td></tr>
+      <tr><td>Selektivno otkrivanje</td><td><code>tenant_id</code>, <code>app_id</code></td></tr>
+      <tr><td>Fiskalno vezanje</td><td><code>jir</code>, <code>zki</code>, <code>amount_gross</code></td></tr>
+    </tbody>
+  </table></div>
+  <p style="margin-top:1rem"><b>Tiskani kod koji se može opozvati i koji sam raste</b> — papir to inače ne može. Anti-replay: opcionalno polje <code>v</code> (visina atoma) u prstenu 0; starija replika → NEPOZNATO, druga grana → ALARM.</p>
+</div></section>
+
+<section id="servis"><div class="wrap">
+  <div class="oznaka">Zajednica · „prvo javni verifikator"</div>
+  <h2>Online servis — što, i redoslijed</h2>
+  <div class="kartice">
+    <div class="kartica"><div class="s">Prvi artefakt</div><h3>Javni verifikator</h3><p>Skeniraj → provjeri potpise/pečat → prikaži javni pogled + trostanje, bez ijednog računa. Malen, odmah koristan, usklađen s ciljem sustava.</p></div>
+    <div class="kartica"><div class="s">Ne još</div><h3>Autorska platforma</h3><p>Zajednica izdavatelja ima smisla tek kad postoje izdavatelji. Sad su 3 demo dokumenta. Autorstvo dolazi s potražnjom.</p></div>
+    <div class="kartica"><div class="s">Odluka — Ivan</div><h3>Standard vs SaaS</h3><p>Čitač je zatvorena Rust jezgra → ograđeni vrt. Otvoreni standard + otvoreni čitač = adopcija bez moata; SaaS = moat (lanac+arhiva). Arhitektonski rascjep.</p></div>
+  </div>
+  <p style="margin-top:1.4rem"><b>Što znači za sustav:</b> javni resolver izlaže čitanja arhiva-core svijetu → mora ići kroz postojeći tenant gating i selektivno otkrivanje. Nova javna površina napada; privatnost je dizajn, ne dodatak.</p>
+</div></section>
+
+<section id="iskreno"><div class="wrap">
+  <div class="oznaka">Iskreno · bez tapšanja po ramenu</div>
+  <h2>Što jest, a što nije riješeno</h2>
+  <div class="iskreno">
+    <div class="kutija z"><h3>Konceptualno riješeno <span class="znacka ok">DRŽI</span></h3><p>Pitanje „pobijedi gustoću matematikom" ima odgovor: zaobiđi je pokazivačem na živi izvor uz offline prstenove. Okvir je zatvoren.</p></div>
+    <div class="kutija"><h3>Mjerno neriješeno <span class="znacka upoz">NEPOZNATO</span></h3><p>Krivulja greške po razini ne postoji; H(X|Y) i pokrivenost replike nisu izmjereni. Po pravilu: <b>napisano, nije testirano</b>.</p></div>
+    <div class="kutija r"><h3>Bez tvrdnje o prvenstvu</h3><p>Slepian-Wolf, fountain kodovi, pokazivač-vs-spremnik su poznati. Novo je <b>spoj</b> (offline-dokaziv I živ/opoziv). Patentna pretraga nije rađena — ne tvrdimo svjetsko prvenstvo.</p></div>
+  </div>
+  <p style="margin-top:1.4rem"><span class="znacka upoz">HIPOTEZA — neprovjereno</span> Hibrid: otvori spec + referentni čitač, zadrži zatvoren samo živi sloj (resolver na arhiva-core). Adopcija bez gubitka moata. Najjeftiniji pokus: objavi spec prstena + minimalni JS čitač i mjeri čita li tuđi uređaj kod bez našeg backenda.</p>
+</div></section>
+</main>
+
+<footer><div class="wrap">
+  <p>eho6-protocol · <code>docs/qr4d/TEORIJA_matematicka_gustoca.md</code> · prikaz po GDS standardu (<code>/gds/genesis-tokens.css</code>).</p>
+  <p style="margin-top:.4rem">Brojke označene kao izmjerene izračunate su iz živog koda; sve označeno HIPOTEZA čeka pred-registrirani pokus. Ništa javno bez dokaza.</p>
+</div></footer>
+
+<script>
+(function(){
+  var t=document.getElementById("tema"), k="qr4d-prez-tema";
+  try{ var s=localStorage.getItem(k); if(s) document.documentElement.setAttribute("data-tema",s); }catch(e){}
+  t.addEventListener("click",function(){
+    var sad=document.documentElement.getAttribute("data-tema")==="svijetla"?"tamna":"svijetla";
+    document.documentElement.setAttribute("data-tema",sad);
+    try{ localStorage.setItem(k,sad); }catch(e){}
+  });
+})();
+</script>
+</body>
+</html>
