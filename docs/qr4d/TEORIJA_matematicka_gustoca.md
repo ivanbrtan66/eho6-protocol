@@ -250,3 +250,29 @@ Trostanje: DRŽI (arhiva vratila + pečat/tsa svjež) / ALARM (pečat ne valja) 
 
 ## Sljedeći korak (kad iz teorije u kod)
 Prvi PR: `qr4d/izvor.py` + tablica indeksa + jedan redak u `_citaj_dokument`, iza značajke-zastavice (`QR4D_IZVOR=arhiva`), default ostaje demo dok se ne izmjeri. Test: n≥30 stvarnih izdanja → 0 lažnih DRŽI, pokrivenost indeksa ≥ 0,80 (95 % CI donja granica).
+
+---
+
+# SINTEZA — inovacija, je li riješeno, javni servis (28.09.)
+
+## Što je inovativno (i što nije — pošteno)
+- **Preokret okvira (naše):** fizička gustoća nije prava granica; granica je fiksna kripto-režija po prstenu (izmjereno 75 B, potpis = 512 točaka = 33 %). q4d nije spremište nego **živi, vezani prozor u izvor istine**; točke su sidro+pokazivač+offline-dokaz, ne skladište.
+- **Dvorežimski kod:** A = indeks u živi izvor (arhiva-core), B = samostalni offline dokaz (prstenovi), iste fizičke točke.
+- **Nije novo samo po sebi:** Slepian-Wolf, fountain kodovi, pokazivač-naspram-spremnika su poznati. **Novo je spoj:** tiskani znak koji je ISTOVREMENO offline-dokaziv I živ/opoziv, jer iza njega stoji repliciran lanac + arhiva-core. Nisam radio patentnu/literaturnu pretragu → ne tvrdim svjetsko prvenstvo (pravilo 7).
+
+## Je li teorijski riješeno
+- **Konceptualno DA:** pitanje „pobijedi gustoću matematikom" ima odgovor — ne pobjeđuje se, zaobiđe se pokazivačem na živi izvor uz prstenove kao offline rezervu.
+- **Mjerno NE (još):** krivulja greške po razini ne postoji; H(X\|Y) i pokrivenost nisu izmjereni (pred-registrirano). Dakle: **napisano, ne testirano** (pravilo 1).
+
+## Javni servis za q4d prikaz — moguće i treba li
+- **Moguće:** tehnički da; `/q/skener` i `/api/v1/qr4d/citaj` su već javni; treba samo resolver + renderer kao javni servis.
+- **Napetost sa CILJEM:** CLAUDE.md kaže „prvo javni verifikator". To znači: prvi javni artefakt = **verifikator** (dokaži autentičnost, prikaži javni pogled), NE platforma za autorstvo.
+- **Tvrda istina o potrebi:** platforma za zajednicu ima smisla tek kad postoje izdavatelji q4d kodova. Sad postoje 3 demo dokumenta. Graditi autorsku platformu prije izdavatelja je naopako.
+- **Središnji strateški rizik (tvoja odluka):** čitač je kompajlirana Rust jezgra (`_jezgra.abi3.so`, zatvorena). Kod koji čita samo NAŠ skener je ograđeni vrt. QR je pobijedio jer je otvoreni ISO standard. Vrijednost q4d ovisi o rasprostranjenosti našeg čitača → biraj: **SaaS verifikator (mi hostamo, moat = lanac+arhiva)** ili **otvoreni standard + otvoreni čitač (adopcija, bez moata)**.
+- **Sigurnost (pravilo 12/16):** javni resolver izlaže čitanja arhiva-core svijetu → mora ići kroz postojeći tenant gating + selektivno otkrivanje; nova javna površina napada.
+
+## Preporuka (jedna)
+Prvi javni artefakt = **q4d VERIFIKATOR** (pročitaj → provjeri potpise/pečat → prikaži javni pogled + trostanje), ne autorska platforma. To je usklađeno s „prvo javni verifikator", malen je, i odmah je koristan (bilo tko provjeri je li kod pravi). Autorstvo/zajednica dolazi kad ima izdavatelja. Odluku otvoreni-standard vs SaaS donosi Ivan — to je arhitektura, ne trivijalnost.
+
+## Deset riječi
+Javni verifikator dokazuje: **DOKAZIV** (bilo tko provjeri offline/online), **SAMOSTALAN** (živi na internetu sam), **PRENOSIV** (bilo koji uređaj). Test: stranac skenira → DRŽI/PAD/NEPOZNATO bez ijednog našeg računa.
