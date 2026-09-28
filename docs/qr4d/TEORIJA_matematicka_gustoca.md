@@ -208,3 +208,45 @@ Na n≥30 stvarnih skeniranja izmjeri: (a) udio s pogotkom u lokalnoj replici (r
 
 ## 9. Deset riječi / 2050
 Dokazuje: **ŽIV** (kod raste s atomom), **SAMOISCJELJUJUĆ** (opoziv/ispravak u atomu bez reprinta), **DOKAZIV** (vezanje + prstenovi). 2050: papir je trajno sidro; sve živo je u lancu; isti otisnuti kod danas nosi dokument kakav bude za 11 godina.
+
+---
+
+# KORAK NULA — IZVOR ISTINE (izmjereno 28.09., presuda)
+
+> Provjera na zahtjev: je li q4d izvor atom ili demo baza. Izmjereno iz živog koda, ne pretpostavljeno.
+
+## Nalaz
+1. **q4d danas čita iz demo sqlite**, ne iz lanca. `qr4d/app.py`: `BAZA=/var/lib/qr4d/qr4d.db`, `dokument(adr)` radi `SELECT … FROM dokument`, 3 hardkodirana `DEMO` dokumenta, testni ključ `kljuc_testa()`. grep `dokarh|lanac|atom` u app.py → 0. **Testna faza, namjerno odvojeno (Ivan potvrdio).**
+2. **DokArh atom NIJE izvor poslovnog dokumenta.** `c8498_RACUN_qr4d_app_py.dok.json` = `{tip, putanja, hash_prije, hash_poslije, visina}` — notar IZMJENE KODA, ne dokument. „u lancu su SAMO putanja i hashevi — sadržaj nikad."
+3. **Pravi izvor istine = arhiva-core** (`services/arhiva_core/models.py`, Postgres `arhiva_core_dokumenti`), ključ **`weise3_id`** (unique, index), pečat **`pecat_hash`** (Z3), vrijeme **`tsa_token`/`tsa_timestamp`**.
+
+## Zašto to mijenja spoj nabolje
+Sve sposobnosti režima A **već postoje kao stupci u arhiva-core** — ne grade se, samo se čitaju:
+| Režim A sposobnost | Postojeći stupac arhiva-core |
+|---|---|
+| živi prikaz / rast | `faza` (draft…), `izmijenjen` |
+| opoziv / zaborav po volji | `spaljivanje_status`, `faza`, `retain_until` |
+| svježina / anti-replay | `pecat_hash`, `tsa_token`, `tsa_timestamp` |
+| selektivno otkrivanje | `tenant_id`, `app_id`, `creator_weise3_id` (tenant gating već testiran) |
+| fiskalno vezanje | `jir`, `zki`, `amount_gross` |
+
+Znači: **ne treba nova funkcionalnost u arhiva-core.** Treba samo resolver koji q4d adresu preslika na `weise3_id` i renderira postojeće stanje.
+
+## Preslikavanje adrese (jedina arhitektonska odluka) — preporuka
+q4d `adresa` (16 zn, `base32(sha3-256("EHO10-4D::"+tip+podaci0))[:10]`) i arhiva `weise3_id` su **različiti content-hashevi** → nisu jednaki, treba eksplicitna veza.
+- **Preporuka: zaseban q4d-vlastiti indeks `adresa → weise3_id`** (nova mala tablica u q4d bazi, puni se pri izdavanju). **Nula izmjena sheme arhiva-core** → maksimalna izolacija (Z0/pravilo 12), jer je arhiva-core dijeljena, višekorisnička produkcija koju ne smijemo dirati.
+- Odbačeno: novi stupac u `arhiva_core_dokumenti` (traži migraciju dijeljene produkcijske tablice — nepotreban rizik) i upis u `semantic_payload` JSONB (neindeksirano, sporo).
+
+## Spoj (aditivan, bez diranja bitova ni arhiva-core sheme)
+```
+qr4d/izvor.py  (nova datoteka)
+  razrijesi(adr) -> (dokument|None, izvor)
+    1. q4d indeks adresa->weise3_id  (nova tablica u qr4d.db)
+    2. arhiva_core.verificiraj_dokument(weise3_id, kreator)  [postojeća funkcija]
+    3. fallback: dokument(adr) iz sqlite  (današnje ponašanje, demo)
+qr4d/app.py: _citaj_dokument dobije JEDAN redak — prvo izvor.razrijesi, pa fallback.
+```
+Trostanje: DRŽI (arhiva vratila + pečat/tsa svjež) / ALARM (pečat ne valja) / NEPOZNATO (nema veze ili arhiva nedostupna → demo/prstenovi). Stari kodovi i demo rade identično.
+
+## Sljedeći korak (kad iz teorije u kod)
+Prvi PR: `qr4d/izvor.py` + tablica indeksa + jedan redak u `_citaj_dokument`, iza značajke-zastavice (`QR4D_IZVOR=arhiva`), default ostaje demo dok se ne izmjeri. Test: n≥30 stvarnih izdanja → 0 lažnih DRŽI, pokrivenost indeksa ≥ 0,80 (95 % CI donja granica).
