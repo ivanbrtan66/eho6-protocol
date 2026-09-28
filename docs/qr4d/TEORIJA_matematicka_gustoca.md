@@ -97,3 +97,54 @@ Na n ≥ 30 stvarnih payloada izračunati omjer `H(X|Y)/H(X)` (Y = glava lanca +
 - **Dokazuje:** DOKAZIV (dokaz putuje bez mreže), PRENOSIV (radi offline, među uređajima), NEUNIŠTIV (djelomično čitanje i dalje rekonstruira — rateless).
 - **Test:** stopa rekonstrukcije naspram udjela pročitanih točkica (rateless), i lažno-prihvaćanje = 0 na krivom Y (sindrom + trostanje).
 - **2050:** papir postaje sićušan pečat-sidro (sjeme + commitment); „sadržaj" živi u zajedničkom repliciranom lancu; kod je pokazivač + sindrom koji dokazuje koje stanje lanca. **Sutra radimo:** izmjeriti `H(X|Y)` (§8) i, ako prođe, dodati sindromski prsten kao novi sloj uz postojeće.
+
+---
+
+# DODATAK — Korak Nula IZMJEREN (2026-09-28, iz živog koda)
+
+> Izvor: `eu:/var/www/genesis/paketi/eho_v2/eho_v2/kod4d.py` + `qr_eho10_4dimenzije.py` (pročitano).
+> Aritmetika kapaciteta izračunata deterministički iz konstanti (K=40, N0=16, RS 35 %, opis 24 B).
+> Status i dalje TEORIJA za dobitak; ovo su izmjerene ULAZNE brojke, ne rezultat pokusa.
+
+## Broj 1 — čime kodira danas (IZMJERENO)
+- Geometrija: suncokretova spirala, pojas b ima `40·(2b+1)` točaka; **1 bit po točki** (R0=0,27 mala / R1=0,52 velika, ili točka/praznina). Nema više razina.
+- Tijelo prstena = `tip(1) + len(2) + podaci(D) + potpis_Ed25519(64) + lanac[:8]` → **fiksna režija 75 B po prstenu neovisno o payloadu**.
+- RS: podatkovni blokovi `nsym = ⌈0,35·bd⌉` (35 %), opis 8 B + 16 B RS = 24 B.
+
+| podaci B | tijelo B | emit B | točaka | pojaseva | režija % |
+|---:|---:|---:|---:|---:|---:|
+| 16 | 91 | 147 | 1176 | 6 | 82 |
+| 32 | 107 | 169 | 1352 | 6 | 70 |
+| 50 | 125 | 193 | 1544 | 7 | 60 |
+| 100 | 175 | 456 | 3648 | 10 | 43 |
+| 300 | 375 | 672 | 5376 | 12 | 20 |
+
+**Nalaz:** usko grlo nije payload nego **fiksna kriptografska režija po prstenu**. Potpis sam = 64 B = **512 točaka** (≈ 33 % prstena od 1544 točke). Prazan prsten (0 payloada) već traži 1008 točaka.
+
+## Broj 2 — krivulja greške po razini (NE POSTOJI kao mjerenje)
+Čitač je binaran (R0/R1), 1 bit po točki; Rust jezgra `_jezgra.abi3.so` je kompajlirana, izvor greške po razini se nigdje ne sprema. `_potroseno` mjeri samo utrošeni RS kapacitet `(2·greške+brisanja)/nsym`, ne po-razinsku vjerojatnost. **Zaključak: §3.3 (M-arni optimum) nema podatka — prije te tvrdnje treba pustiti čitač preko graduiranih uzoraka.**
+
+## Broj 3 — H(X) vs H(X|Y) po polju (procjena, bez n≥30)
+| polje | B | H(X)~b | H(X|Y) | uvjet |
+|---|---:|---:|---|---|
+| tip | 1 | 8 | ≈0 | iz konteksta |
+| len | 2 | 16 | ≈0 | iz \|podaci\| |
+| podaci | 50 | 400 | ≈0* | *ako je dokument u repliciranom lancu |
+| **potpis** | **64** | **512** | **512 ILI ≈0** | **≈0 samo ako lokalna replika lanca već drži potpis; inače pun (pseudoslučajan — Slepian-Wolf NE pomaže)** |
+| lanac8 | 8 | 64 | ≈0 | rekompatibilan iz tijela |
+
+## Ispravak teze (istina prije elegancije)
+Generički Slepian-Wolf nad **payloadom** daje malo — payload je već malen, a potpis je pseudoslučajan i **nestlačiv bočnom informacijom**. Pravi poluga je uža i jača:
+
+> **Potpis (64 B) i lanac (8 B) — 75 B fiksne režije — postaju bočna informacija Y tek kad uređaj drži repliciran lanac (Z3/Z17).** Tada čitač ne treba potpis iz papira: već ga ima lokalno. Prstenovi nose samo indeks + dokaz vezanja/svježine. Srce već nosi 16-znakovnu adresu — to je taj indeks.
+
+**Dvorežimski rateless kod (nova, konkretnija hipoteza):**
+- **Režim A (dokument u lokalnoj replici):** prstenovi nose samo sindrom/indeks → čita se malo točaka, `H(X|Y)` ≈ adresa. Teorijski nestaje ≈ 75 B/prsten fiksne režije.
+- **Režim B (hladan/nov dokument, stara replika):** prstenovi nose puni samostalni dokaz (kao danas).
+- Rateless (RaptorQ) čini da **iste fizičke točke** služe oba: pročitaš malo za A, sve za B. „Na rate" (Structured Append, već postoji) je prirodni nosač.
+
+**Druga strana medalje (mjerljiv rizik):** režim A vrijedi samo uz svježu repliku koja sadrži dokument. Stara/nesinkronizirana replika → obavezan pad na režim B, nikad lažni OK. Trostanje već to podržava (`presudi`: NEPOZNATO kad lanac nije provjerljiv).
+
+## Sljedeći najjeftiniji pokus (revidiran, pred-registriran)
+Ne mjeriti generički `H(X|Y)` nego **pokrivenost lokalne replike**: na n≥30 stvarnih skeniranja izmjeri udio dokumenata koji SU u lokalnoj replici lanca u trenutku čitanja.
+**Kriterij (fiksiran):** ako je donja granica 95 % CI te pokrivenosti ≥ 0,80 → dvorežimski kod isplativ (režim A pokriva većinu), i tada prstenovi u prosjeku gube ≥ 75 B fiksne režije. Ispod 0,80 → režim A je rijedak, ostaje puni kod; teza pada i to se zapisuje.
