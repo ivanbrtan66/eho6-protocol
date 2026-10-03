@@ -10,7 +10,7 @@ Datum: 3.10.2026. · grana `claude/project-analysis-tests-3v00ko`
 
 | sloj | što je izmjereno | naredba / izvor |
 |---|---|---|
-| **kod (ovaj repo)** | 4 datoteke, **0 testova prije ovog rada**. Poligon-skripte (`poligon_krug2.py`, `poligon_zrno.py`, `dnk_zrno.py`, `eho10_alat`) nisu u repozitoriju, nalaze se samo na NEW/EU. | `find . -type f` → README, eho6_node.py, install.sh, .gitignore |
+| **kod (ovaj repo)** | 4 datoteke, **0 testova prije ovog rada**. Poligon-skripte (`poligon_krug2.py`, `poligon_zrno.py`, `dnk_zrno.py`, `eho10_alat`) nisu u repozitoriju, nalaze se samo na NEW/EU (EU: `/var/www/genesis/protokol/poligon_kod/`, provjereno 3.10.). | `find . -type f` → README, eho6_node.py, install.sh, .gitignore |
 | **lanac** | Atomi c10195, c10202, c10206, c10275, c10277 postoje i **svi brojevi sa stranice odgovaraju lancu** (vidi §2). | `mcp__MAX__read_file` nad `/var/www/genesis/schema_dokarh/genesis/c10{195,202,206,275,277}_*` |
 | **dokument (stranica)** | HTTP 200, 17.642 B, tema/širina/konzola/4xx/vodoravni skrol provjereni (§2c). | `curl`, Playwright |
 
@@ -107,3 +107,8 @@ Pravilo 8–13: nijedna postojeća datoteka nije mijenjana. Dodani su samo `test
 - Nije pokrenut nijedan poligon test, jer skripte nisu u repozitoriju i ne smijem pisati na produkciju. Sve brojke u §2a su **pročitane iz lanca**, ne ponovljene.
 - Firefox i WebKit nisu pokrenuti.
 - `grep` nad serverom za pretragu cijelog `/var/www/genesis` istekao je nakon 60 s; ciljana čitanja radila su.
+
+## Dodatak: eho6 naspram eho_v2 (izmjereno na EU, samo čitanje)
+- `paketi/eho_v2` (2.0.0a3) = EHO-10: `zapis` (kanonski CBOR + Ed25519 + Base45), `kod4d`, `presude`, `citac`, `qr_eho10_4dimenzije`, `mmr`, `glava`, `fuzija`, Rust jezgra (`_jezgra`, `_provjera`, WASM). Poligon skripte (`protokol/poligon_kod/poligon_krug2.py`, `poligon_zrno.py`) uvoze `eho_v2.mmr` i `eho_v2._jezgra`.
+- `grep eho6|FraktalToken|RIBOSOM` nad `paketi/` = 0 pogodaka; nijedan atom u lancu ne sadrži oba imena (`eho6.{0,200}eho_v2` = 0). eho6 admisija/login/bridge živi odvojeno: `eho/eho6_engine.py`, `eho6_bootstrap.py`, `api/eho6_*.py`, `services/eho6_admit_service.py`.
+- `eho_v2.zapis.potpisi` potpisuje kanonski CBOR polja, dok `eho6_node.genesis_login` potpisuje sirove bajtove `ts`. Poruke su različite pa izravna zamjena potpisa lomi provjeru na serveru bez izmjene servera.
