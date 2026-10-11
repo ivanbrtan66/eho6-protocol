@@ -72,6 +72,7 @@ ok "Python: ${B}${PYVER}${RST} ($(command -v "$PYTHON"))"
 
 # --- Create ~/.eho6/ --------------------------------------------------------
 mkdir -p "$EHO6_DIR"
+chmod 700 "$EHO6_DIR"
 ok "Directory: $EHO6_DIR"
 
 # --- Ed25519 keypair generation ----------------------------------------------
@@ -79,7 +80,8 @@ KEY_FILE="$EHO6_DIR/node.key"
 PUB_FILE="$EHO6_DIR/node.pub"
 
 gen_keypair() {
-  $PYTHON -c "
+  # umask 077: node.key is created 0600, never briefly world-readable
+  ( umask 077; $PYTHON -c "
 import secrets, hashlib, sys
 
 P = 2**255 - 19
@@ -128,7 +130,7 @@ pub_path = sys.argv[2]
 with open(key_path, 'wb') as f: f.write(sk)
 with open(pub_path, 'w') as f: f.write(pk.hex())
 print(pk.hex())
-" "$KEY_FILE" "$PUB_FILE"
+" "$KEY_FILE" "$PUB_FILE" )
 }
 
 if [[ -f "$KEY_FILE" ]]; then
@@ -191,13 +193,10 @@ ok "Config saved: $CONFIG_FILE"
 
 # --- Determine curl flags ----------------------------------------------------
 CURL_FLAGS=("-s" "-S" "--max-time" "30")
-if [[ "$PLATFORM" == "termux" ]]; then
-  CURL_FLAGS+=("--insecure")
-  EU_BASE="$EU_HTTP"
-  warn "Termux: using HTTP fallback + --insecure"
-else
-  EU_BASE="$EU_HTTPS"
-fi
+# HTTPS with certificate verification on every platform: the daemon downloaded
+# below is executed, so it must never arrive over cleartext or an unverified TLS link.
+# Termux: if curl reports a certificate error, run `pkg install ca-certificates`.
+EU_BASE="$EU_HTTPS"
 
 # --- Admit request -----------------------------------------------------------
 printf "\n${B}--- Requesting admission ---${RST}\n"
