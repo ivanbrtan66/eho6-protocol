@@ -264,3 +264,112 @@ def test_install_sh_key_permissions_and_no_insecure_transport():
     assert 'chmod 700 "$EHO6_DIR"' in sh
     assert "umask 077" in sh
     assert "--insecure" not in sh and 'EU_BASE="$EU_HTTP"' not in sh
+
+
+# --- Nalaz 9: admit.json se provjerava protiv ugrađenih sidara --------------------
+# Stvarni testni admit s EU (eho6_anchor/admits/test_node_001.admit.json, simulacija, 26.6.2026.)
+ADMIT_TEST_NODE_001 = {
+    "candidate_pk": "ff3c168bec7fe4f78686832ed212389543d498a08e6963fd50ac83973c65b424",
+    "agent_id": "test_node_001",
+    "word": "test",
+    "nastao": "2026-06-26T02:43:16.668568+00:00",
+    "threshold": 2,
+    "body_sha": "587afb858fc001e3fa7a37ac5cc80bb8a6117875b3ad048fee63952a309f8985",
+    "signatures": [
+        {"anchor_node": "ubuntu",
+         "anchor_pk": "4d628b9cfeac2912faee20c9421cea91c227075a39105bb12c713483a4f46b13",
+         "sig": "IMFcXXRUO0/PzkgYJXT1c0yXxQ4aClsD52FarWx31vjxbY7GI/Nb7mlFsh8e3kR/IxE/5hAZlSN1F+98m8VQAg=="},
+        {"anchor_node": "genesis-de",
+         "anchor_pk": "d210246f0f45cb256315c44d97f4c1a7ae95342e695fbc4a5f5b3fbef421dc8f",
+         "sig": "GCgKjMJdgz8eRCDyjNX6z/AvOOiW7trEbCUEfp4/690P/kyv+bEoJr6700Eef9JEcE+iGar2HgzKE6Msbs+uCg=="},
+    ],
+    "status": "ADMITTED",
+    "tx_hash": "sim_tx_5b89d7a0e08712726104769e85d1dec7",
+    "admit_mode": "simulation",
+}
+
+
+def _admit(**changes):
+    a = json.loads(json.dumps(ADMIT_TEST_NODE_001))
+    a.update(changes)
+    return a
+
+
+def test_rfc8032_verify_vector():
+    assert n.ed25519_verify(bytes.fromhex(PK1), bytes.fromhex(SIG1), b"")
+    bad = bytearray(bytes.fromhex(SIG1)); bad[0] ^= 1
+    assert not n.ed25519_verify(bytes.fromhex(PK1), bytes(bad), b"")
+    assert not n.ed25519_verify(bytes.fromhex(PK1), bytes.fromhex(SIG1), b"x")
+
+
+def test_verify_rejects_s_not_reduced():
+    sig = bytearray(bytes.fromhex(SIG1))
+    s = int.from_bytes(sig[32:], "little") + n.Q  # isti potpis, S + L: mora biti odbijen (malleability)
+    assert s < 2**256
+    sig[32:] = s.to_bytes(32, "little")
+    assert not n.ed25519_verify(bytes.fromhex(PK1), bytes(sig), b"")
+
+
+def test_ed25519_verify_crosscheck_with_cryptography():
+    ed = pytest.importorskip("cryptography.hazmat.primitives.asymmetric.ed25519")
+    import os
+    for i in range(30):
+        sk = ed.Ed25519PrivateKey.from_private_bytes(os.urandom(32))
+        pk = sk.public_key().public_bytes_raw()
+        msg = os.urandom(i * 5)
+        sig = sk.sign(msg)
+        assert n.ed25519_verify(pk, sig, msg)
+        flipped = bytearray(sig); flipped[i % 64] ^= 0x40
+        assert not n.ed25519_verify(pk, bytes(flipped), msg)
+
+
+def test_real_admit_holds():
+    verdict, why = n.verify_admit(ADMIT_TEST_NODE_001, ADMIT_TEST_NODE_001["candidate_pk"])
+    assert verdict == n.DRZI, why
+    assert "genesis-eu" in why and "genesis-de" in why
+
+
+@pytest.mark.parametrize("admit,why", [
+    (_admit(word="other"), "body_sha"),                       # tijelo promijenjeno
+    (_admit(status="EU_SIGNED"), "status"),
+    (_admit(signatures=ADMIT_TEST_NODE_001["signatures"][:1]), "1 valid"),
+    (_admit(signatures=[ADMIT_TEST_NODE_001["signatures"][0]] * 2), "1 valid"),  # isti EU potpis dvaput
+    (_admit(signatures=[dict(ADMIT_TEST_NODE_001["signatures"][0]),
+                        dict(ADMIT_TEST_NODE_001["signatures"][1], anchor_pk="ab" * 32)]), "1 valid"),
+    (_admit(signatures=[ADMIT_TEST_NODE_001["signatures"][0],
+                        dict(ADMIT_TEST_NODE_001["signatures"][1], sig="!!notb64!!")]), "1 valid"),
+])
+def test_tampered_admit_fails(admit, why):
+    verdict, reason = n.verify_admit(admit)
+    assert verdict == n.PAD and why in reason
+
+
+def test_admit_for_other_node_fails():
+    verdict, reason = n.verify_admit(ADMIT_TEST_NODE_001, "00" * 32)
+    assert verdict == n.PAD and "candidate_pk" in reason
+
+
+@pytest.mark.parametrize("admit", [None, [], "x", {"status": "ADMITTED"},
+                                   # jednopotpisni zapis kao racva010v1v2td219f51e.admit.json na EU
+                                   {"agent_id": "a", "candidate_pk": "00" * 32, "sig": "x", "anchor_pk": "4d"},
+                                   _admit(signatures="nope")])
+def test_malformed_admit_is_unknown(admit):
+    assert n.verify_admit(admit)[0] == n.NEPOZNATO
+
+
+def test_node_state_trusts_signatures_not_file_status(tmp_path, monkeypatch):
+    monkeypatch.setattr(n, "EHO6_DIR", tmp_path)
+    (tmp_path / "config.json").write_text(json.dumps({"agent_id": "t"}))
+    (tmp_path / "node.key").write_bytes(b"\x01" * 32)
+    forged = _admit(word="forged")  # status kaže ADMITTED, ali potpisi ne odgovaraju
+    (tmp_path / "admit.json").write_text(json.dumps(forged))
+    st = n.NodeState(); st.load()
+    assert st.admit_status == "ADMIT_PAD" and st.admit_verdict == n.PAD
+    (tmp_path / "admit.json").write_text("{not json")
+    st = n.NodeState(); st.load()
+    assert st.admit_status == "ADMIT_NEPOZNATO"
+
+
+def test_anchor_set_has_no_retired_mar():
+    assert "9f3d60f9c91827952599b2bbf67b474d9e0807950a36fba80fcb6eaadc848c30" not in n.ANCHOR_PKS
+    assert set(n.ANCHOR_PKS.values()) == {"genesis-eu", "genesis-de", "genesis-es"}

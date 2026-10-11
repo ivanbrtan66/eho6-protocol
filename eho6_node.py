@@ -29,6 +29,21 @@ DEFAULT_PORT = 8091
 DEFAULT_BIND = "127.0.0.1"  # loopback only; set "bind" in config.json to expose on LAN
 SESSION_REFRESH_INTERVAL = 50 * 60  # 50 minutes
 
+# Admission anchors (Ed25519). Same set the server verifier accepts
+# (services/haveno_admission.KNOWN_ANCHORS: ustav c1487 + AMANDMAN-2; MAR retired by c4176).
+# A rotation needs a new node release: the node does not walk the amendment chain itself.
+ANCHOR_PKS = {
+    "4d628b9cfeac2912faee20c9421cea91c227075a39105bb12c713483a4f46b13": "genesis-eu",
+    "d210246f0f45cb256315c44d97f4c1a7ae95342e695fbc4a5f5b3fbef421dc8f": "genesis-de",
+    "a70db7eda9a83318ca031196e7abe8c0f54665c7c3c5d3285c79149d2e6fd707": "genesis-es",
+}
+ADMIT_REQUIRED_SIGS = 2
+
+# Verdicts (three-state, never bool)
+DRZI = "DRZI"
+PAD = "PAD"
+NEPOZNATO = "NEPOZNATO"
+
 # Organ types
 RIBOSOM = 1
 REGULACIJA = 2
@@ -111,6 +126,83 @@ def ed25519_pubkey(sk32: bytes) -> bytes:
     return _encode(_scalarmult(a, _B))
 
 
+_SQRT_M1 = pow(2, (P - 1) // 4, P)
+
+
+def _decode(s32: bytes):
+    """Decode a 32-byte point encoding; None if not a canonical curve point."""
+    if len(s32) != 32:
+        return None
+    n = int.from_bytes(s32, "little")
+    y, sign = n & ((1 << 255) - 1), n >> 255
+    if y >= P:
+        return None
+    x2 = ((y * y - 1) * pow(_d * y * y + 1, P - 2, P)) % P
+    x = pow(x2, (P + 3) // 8, P)
+    if (x * x - x2) % P != 0:
+        x = x * _SQRT_M1 % P
+    if (x * x - x2) % P != 0:
+        return None
+    if x == 0 and sign:
+        return None
+    if x & 1 != sign:
+        x = P - x
+    return (x, y)
+
+
+def ed25519_verify(pk32: bytes, sig64: bytes, msg: bytes) -> bool:
+    """RFC 8032 verification (cofactorless, rejects S >= L and non-canonical points)."""
+    if len(pk32) != 32 or len(sig64) != 64:
+        return False
+    A, R = _decode(pk32), _decode(sig64[:32])
+    S = int.from_bytes(sig64[32:], "little")
+    if A is None or R is None or S >= Q:
+        return False
+    k = int.from_bytes(_sha512(sig64[:32] + pk32 + msg), "little") % Q
+    return _scalarmult(S, _B) == _add(R, _scalarmult(k, A))
+
+
+def verify_admit(admit, node_pk_hex: str = "") -> tuple:
+    """Check admit.json the way services/haveno_admission.verify_admit_json does, but stricter.
+
+    Returns (DRZI | PAD | NEPOZNATO, reason). Malformed input is NEPOZNATO; a readable
+    document that fails a check is PAD. Signatures count once per DISTINCT known anchor.
+    """
+    if not isinstance(admit, dict):
+        return NEPOZNATO, "admit is not a JSON object"
+    for key in ("candidate_pk", "agent_id", "word", "nastao", "threshold", "body_sha", "signatures", "status"):
+        if key not in admit:
+            return NEPOZNATO, f"missing field: {key}"
+    if not isinstance(admit["signatures"], list):
+        return NEPOZNATO, "signatures is not a list"
+    if admit["status"] != "ADMITTED":
+        return PAD, f"status is {admit['status']!r}, not ADMITTED"
+    if node_pk_hex and str(admit["candidate_pk"]).lower() != node_pk_hex.lower():
+        return PAD, "candidate_pk is not this node's public key"
+
+    body = {k: admit[k] for k in ("candidate_pk", "agent_id", "word", "nastao", "threshold")}
+    canonical = json.dumps(body, sort_keys=True, ensure_ascii=False).encode()
+    if hashlib.sha3_256(canonical).hexdigest() != admit["body_sha"]:
+        return PAD, "body_sha does not match the signed body"
+
+    valid = set()
+    for entry in admit["signatures"]:
+        if not isinstance(entry, dict):
+            continue
+        pk_hex = str(entry.get("anchor_pk", "")).lower()
+        if pk_hex not in ANCHOR_PKS or pk_hex in valid:
+            continue
+        try:
+            sig = base64.b64decode(entry.get("sig", ""), validate=True)
+        except (ValueError, TypeError):
+            continue
+        if ed25519_verify(bytes.fromhex(pk_hex), sig, canonical):
+            valid.add(pk_hex)
+    if len(valid) < ADMIT_REQUIRED_SIGS:
+        return PAD, f"{len(valid)} valid distinct anchor signatures, need {ADMIT_REQUIRED_SIGS}"
+    return DRZI, "anchors: " + ", ".join(sorted(ANCHOR_PKS[pk] for pk in valid))
+
+
 # =============================================================================
 # Node State (global singleton)
 # =============================================================================
@@ -130,6 +222,8 @@ class NodeState:
         self.weise3_id = ""
         self.phi_t_login = ""
         self.admit_status = "UNKNOWN"
+        self.admit_verdict = NEPOZNATO
+        self.admit_reason = "not loaded"
         self.start_time = time.time()
         self.request_count = 0
         self.verify_count = 0
@@ -175,10 +269,18 @@ class NodeState:
         # Admit
         admit_path = EHO6_DIR / "admit.json"
         if admit_path.exists():
-            with open(admit_path) as f:
-                admit = json.load(f)
-            self.admit_status = admit.get("status", "UNKNOWN")
-            self.weise3_id = admit.get("weise3_id", "")
+            try:
+                with open(admit_path) as f:
+                    admit = json.load(f)
+            except (OSError, ValueError) as e:
+                admit = None
+                log_err(f"admit.json unreadable: {e}")
+            # The file's own "status" is never trusted: ADMITTED only with 2 valid anchor signatures
+            self.admit_verdict, self.admit_reason = verify_admit(admit, self.pk_hex)
+            self.admit_status = "ADMITTED" if self.admit_verdict == DRZI else "ADMIT_" + self.admit_verdict
+            if isinstance(admit, dict):
+                self.weise3_id = admit.get("weise3_id", "")
+            log(f"Admit verification: {self.admit_verdict} ({self.admit_reason})")
         else:
             self.admit_status = "NO_ADMIT_FILE"
 
@@ -560,6 +662,8 @@ class EHO6Handler(BaseHTTPRequestHandler):
             "agent_id": STATE.agent_id,
             "public_key": STATE.pk_hex,
             "admit_status": STATE.admit_status,
+            "admit_verdict": STATE.admit_verdict,
+            "admit_reason": STATE.admit_reason,
             "weise3_id": STATE.weise3_id,
             "session_active": bool(STATE.session_token),
             "phi_t": STATE.phi_t_login,
