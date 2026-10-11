@@ -6,6 +6,8 @@ Works on Android ARM (Termux), Ubuntu, macOS.
 """
 
 import base64
+import math
+import ssl
 import hashlib
 import json
 import os
@@ -13,10 +15,10 @@ import struct
 import sys
 import threading
 import time
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.request import Request, urlopen
-from urllib.error import URLError, HTTPError
+from urllib.error import HTTPError
 
 # =============================================================================
 # Constants
@@ -24,6 +26,7 @@ from urllib.error import URLError, HTTPError
 VERSION = "1.0.0"
 EHO6_DIR = Path.home() / ".eho6"
 DEFAULT_PORT = 8091
+DEFAULT_BIND = "127.0.0.1"  # loopback only; set "bind" in config.json to expose on LAN
 SESSION_REFRESH_INTERVAL = 50 * 60  # 50 minutes
 
 # Organ types
@@ -31,7 +34,7 @@ RIBOSOM = 1
 REGULACIJA = 2
 VM_JEZGRA = 3
 
-# FraktalToken XOR constant
+# FraktalToken XOR constant = F(33)
 PHI_XOR = 3524578
 
 # =============================================================================
@@ -118,6 +121,8 @@ class NodeState:
         self.eu_https = ""
         self.eu_http = ""
         self.node_port = DEFAULT_PORT
+        self.bind = DEFAULT_BIND
+        self.allow_insecure_http = False
         self.sk = b""
         self.pk = b""
         self.pk_hex = ""
@@ -144,11 +149,17 @@ class NodeState:
         self.eu_https = cfg.get("eu_https", "https://genesis.limit-connect.com")
         self.eu_http = cfg.get("eu_http", "http://217.160.71.124")
         self.node_port = int(cfg.get("node_port", DEFAULT_PORT))
+        self.bind = cfg.get("bind", DEFAULT_BIND)
+        # Plain-HTTP fallback sends the login signature and token in cleartext: opt-in only
+        self.allow_insecure_http = cfg.get("allow_insecure_http") is True
 
         # Override port from env
         env_port = os.environ.get("EHO6_PORT")
         if env_port:
             self.node_port = int(env_port)
+        env_bind = os.environ.get("EHO6_BIND")
+        if env_bind:
+            self.bind = env_bind
 
         # Keypair
         key_path = EHO6_DIR / "node.key"
@@ -215,20 +226,8 @@ def _http_request(url: str, data=None, headers=None, method="GET", timeout=30):
 
     req = Request(url, data=body, headers=hdrs, method=method)
 
-    try:
-        import ssl
-        ctx = ssl.create_default_context()
-        resp = urlopen(req, timeout=timeout, context=ctx)
-    except (ImportError, URLError):
-        # SSL might fail on some Termux — try without verification
-        try:
-            import ssl
-            ctx = ssl.create_default_context()
-            ctx.check_hostname = False
-            ctx.verify_mode = ssl.CERT_NONE
-            resp = urlopen(req, timeout=timeout, context=ctx)
-        except Exception:
-            resp = urlopen(req, timeout=timeout)
+    # Certificate verification is never disabled: a TLS failure is an error, not a downgrade
+    resp = urlopen(req, timeout=timeout, context=ssl.create_default_context())
 
     raw = resp.read().decode()
     try:
@@ -242,8 +241,14 @@ def _api_call(path: str, data=None, method="GET", headers=None, timeout=30):
     url = STATE.eu_base().rstrip("/") + path
     try:
         return _http_request(url, data=data, headers=headers, method=method, timeout=timeout)
+    except HTTPError:
+        # Server answered over verified TLS; a 4xx/5xx is not a reason to change transport
+        raise
     except Exception as e1:
-        # Fallback to HTTP
+        if not STATE.allow_insecure_http:
+            log_err(f"API call failed: {path} — HTTPS: {e1} (HTTP fallback disabled)")
+            raise
+        log_err(f"WARNING: HTTPS failed ({e1}); using cleartext HTTP fallback (allow_insecure_http)")
         url2 = STATE.eu_base_fallback().rstrip("/") + path
         try:
             return _http_request(url2, data=data, headers=headers, method=method, timeout=timeout)
@@ -326,14 +331,30 @@ def session_refresh_loop():
 # EHO6 Mini-Pipeline (FraktalToken generation)
 # =============================================================================
 def classify_organ(order: dict) -> int:
-    """Classify order into organ type based on amount range."""
-    amount = float(order.get("amount", order.get("value", 0)))
+    """Classify order into organ type based on amount range.
+
+    Raises ValueError for anything that is not a finite, non-negative number.
+    """
+    amount = order.get("amount", order.get("value", 0))
+    if isinstance(amount, bool) or not isinstance(amount, (int, float)):
+        raise ValueError(f"amount must be a number, got {type(amount).__name__}")
+    amount = float(amount)
+    if not math.isfinite(amount) or amount < 0:
+        raise ValueError(f"amount must be finite and >= 0, got {amount}")
     if amount < 100:
         return RIBOSOM
     elif amount < 10000:
         return REGULACIJA
     else:
         return VM_JEZGRA
+
+
+def _uint_field(order: dict, name: str, default: int, maximum: int) -> int:
+    """Read an unsigned integer field that must fit its token slot (no silent truncation)."""
+    value = order.get(name, default)
+    if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= maximum:
+        raise ValueError(f"{name} must be an integer in 0..{maximum}, got {value!r}")
+    return value
 
 
 def compute_phi_t() -> int:
@@ -365,8 +386,8 @@ def build_fraktal_token(order: dict) -> tuple:
     Returns (token_b64, metadata_dict)
     """
     organ = classify_organ(order)
-    intent = order.get("intent", 1)  # 1 = default verification
-    flags = order.get("flags", 0)
+    intent = _uint_field(order, "intent", 1, 0xFF)  # 1 = default verification
+    flags = _uint_field(order, "flags", 0, 0xFFFF)
     phi_t = compute_phi_t()
 
     # Serialize order for hashing
@@ -379,9 +400,9 @@ def build_fraktal_token(order: dict) -> tuple:
     # >BBHI8s16s = 1+1+2+4+8+16 = 32 bytes
     token_raw = struct.pack(
         ">BBHI8s16s",
-        organ & 0xFF,
-        intent & 0xFF,
-        flags & 0xFFFF,
+        organ,
+        intent,
+        flags,
         phi_t,
         anchor,
         payload,
@@ -405,6 +426,32 @@ def build_fraktal_token(order: dict) -> tuple:
 
 
 # =============================================================================
+# Local-only access checks
+# =============================================================================
+_LOCAL_HOSTNAMES = ("localhost", "127.0.0.1", "[::1]")
+
+
+def _strip_port(hostport: str) -> str:
+    if hostport.startswith("["):
+        return hostport.split("]")[0] + "]"
+    return hostport.rsplit(":", 1)[0] if ":" in hostport else hostport
+
+
+def _is_local_host(host: str) -> bool:
+    """True if the Host header names this machine (blocks DNS rebinding)."""
+    return _strip_port(host.strip().lower()) in _LOCAL_HOSTNAMES
+
+
+def _is_local_origin(origin: str) -> bool:
+    """True for http(s)://localhost|127.0.0.1|[::1][:port] origins."""
+    origin = origin.strip().lower()
+    for scheme in ("http://", "https://"):
+        if origin.startswith(scheme):
+            return _is_local_host(origin[len(scheme):])
+    return False
+
+
+# =============================================================================
 # HTTP Request Handler
 # =============================================================================
 class EHO6Handler(BaseHTTPRequestHandler):
@@ -422,9 +469,16 @@ class EHO6Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("X-Krunica-Hash", hashlib.sha256(body).hexdigest()[:16])
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self._send_cors_headers()
         self.end_headers()
         self.wfile.write(body)
+
+    def _send_cors_headers(self):
+        """Allow only browser pages served from this machine; never a wildcard."""
+        origin = self.headers.get("Origin", "")
+        if _is_local_origin(origin):
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Vary", "Origin")
 
     def _send_error(self, status: int, message: str):
         self._send_json({"error": message, "status": status}, status)
@@ -442,13 +496,14 @@ class EHO6Handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         """Handle CORS preflight."""
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self._send_cors_headers()
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
         self.end_headers()
 
     def do_GET(self):
-        STATE.request_count += 1
+        with STATE.lock:
+            STATE.request_count += 1
         path = self.path.split("?")[0].rstrip("/")
 
         if path == "/health":
@@ -459,12 +514,21 @@ class EHO6Handler(BaseHTTPRequestHandler):
             self._send_error(404, f"Not found: {path}")
 
     def do_POST(self):
-        STATE.request_count += 1
+        with STATE.lock:
+            STATE.request_count += 1
         path = self.path.split("?")[0].rstrip("/")
 
         if path == "/eho6/verify":
             self._handle_verify()
         elif path == "/eho6/login":
+            # Login returns the session token: refuse DNS-rebinding hosts and foreign origins
+            if not _is_local_host(self.headers.get("Host", "")):
+                self._send_error(403, "Login is only available via localhost")
+                return
+            origin = self.headers.get("Origin")
+            if origin is not None and not _is_local_origin(origin):
+                self._send_error(403, "Login is not allowed from a foreign origin")
+                return
             self._handle_login()
         else:
             self._send_error(404, f"Not found: {path}")
@@ -519,7 +583,13 @@ class EHO6Handler(BaseHTTPRequestHandler):
 
         try:
             token_b64, metadata = build_fraktal_token(order)
-            STATE.verify_count += 1
+        except ValueError as e:
+            self._send_error(400, f"Invalid order: {e}")
+            return
+
+        try:
+            with STATE.lock:
+                STATE.verify_count += 1
 
             self._send_json({
                 "fraktal_token": token_b64,
@@ -591,8 +661,9 @@ def run_server():
 
     # HTTP server
     port = STATE.node_port
-    server = HTTPServer(("0.0.0.0", port), EHO6Handler)
-    log(f"Listening on 0.0.0.0:{port}")
+    server = ThreadingHTTPServer((STATE.bind, port), EHO6Handler)
+    server.daemon_threads = True
+    log(f"Listening on {STATE.bind}:{port}")
     log(f"Health:  http://localhost:{port}/health")
     log(f"Status:  http://localhost:{port}/eho6/status")
     log(f"Verify:  POST http://localhost:{port}/eho6/verify")

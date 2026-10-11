@@ -47,7 +47,7 @@ curl -fsSL https://genesis.limit-connect.com/quantum/eho6/install.sh | bash -s -
 4. Polls status every 10s until `ADMITTED`
 5. Downloads `eho6_node.py` edge daemon
 6. Configures autostart (systemd / LaunchAgent / Termux:Boot)
-7. Starts node — available at `http://localhost:8091`
+7. Starts node — available at `http://localhost:8091` (loopback only; set `"bind"` in `~/.eho6/config.json` to expose it)
 
 ## Edge Node API
 
@@ -101,7 +101,7 @@ Every verified order becomes a 32-byte `FraktalToken`:
 [organ:1][intent:1][flags:2][phi_t:4][anchor:8][payload:16] = 32 bytes
 ```
 
-Where `phi_t` is a Fibonacci-modulated timestamp: `(time_ns//1000 XOR F(32)) & 0xFFFFFFFF`
+Where `phi_t` is a Fibonacci-modulated timestamp: `(time_ns//1000 XOR F(33)) & 0xFFFFFFFF`, where F(33) = 3524578
 
 ## License
 

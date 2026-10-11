@@ -1,7 +1,7 @@
 """Testovi za eho6_node.py (stdlib + pytest). Pokretanje: python3 -m pytest tests -v
 
-Poznati nedostaci su xfail(strict=True): kad se popravi kod, test PADA dok se
-oznaka ne ukloni, pa popravak ne može proći nezapaženo.
+Nalazi §3 iz docs/IZVJESTAJ_verifikacija_2026-10-03.md (1, 2, 3, 4, 6, 8) su
+popravljeni; njihovi nekadašnji xfail testovi sada su obični testovi.
 """
 import base64
 import importlib.util
@@ -70,13 +70,15 @@ def test_phi_t_fits_32_bits():
     assert 0 <= n.compute_phi_t() <= 0xFFFFFFFF
 
 
-@pytest.mark.xfail(strict=True, reason="README: F(32)=2178309, kod koristi 3524578 = F(33)")
 def test_phi_xor_matches_readme():
-    assert n.PHI_XOR == 2178309
+    a, b = 0, 1
+    for _ in range(33):
+        a, b = b, a + b
+    assert n.PHI_XOR == a == 3524578  # F(33)
+    assert "XOR F(33)" in (Path(__file__).parent.parent / "README.md").read_text()
 
 
-@pytest.mark.xfail(strict=True, reason="negativan iznos ide u RIBOSOM, NaN u VM_JEZGRA; treba odbiti")
-@pytest.mark.parametrize("bad", [-5, float("nan"), float("inf")])
+@pytest.mark.parametrize("bad", [-5, float("nan"), float("inf"), "abc", "50", True, None])
 def test_classify_rejects_invalid_amounts(bad):
     with pytest.raises(ValueError):
         n.classify_organ({"amount": bad})
@@ -117,14 +119,148 @@ def test_unknown_path_404(server):
     assert _post(server + "/nema", {}).code == 404
 
 
-@pytest.mark.xfail(strict=True, reason="'abc' kao iznos baca ValueError -> 500 umjesto 400")
-def test_verify_bad_amount_is_client_error(server):
-    assert _post(server + "/eho6/verify", {"order": {"amount": "abc"}}).code == 400
+@pytest.mark.parametrize("order", [{"amount": "abc"}, {"amount": -1}, {"intent": 256}, {"flags": -1}, {"flags": "x"}])
+def test_verify_bad_order_is_client_error(server, order):
+    assert _post(server + "/eho6/verify", {"order": order}).code == 400
 
 
-@pytest.mark.xfail(strict=True, reason="ACAO:* na /eho6/login koji vraća session_token: svaka web-stranica ga može pročitati")
-def test_no_wildcard_cors_on_login(server):
-    n.genesis_login = lambda: {"token": "x", "phi_t": "1"}
-    n.genesis_bridge = lambda t: {"session_token": "S", "weise3_id": "W"}
+@pytest.mark.parametrize("field,maximum", [("intent", 0xFF), ("flags", 0xFFFF)])
+def test_uint_fields_are_not_truncated(field, maximum):
+    n.build_fraktal_token({field: maximum})
+    with pytest.raises(ValueError):
+        n.build_fraktal_token({field: maximum + 1})
+
+
+@pytest.fixture()
+def fake_login(monkeypatch):
+    monkeypatch.setattr(n, "genesis_login", lambda: {"token": "x", "phi_t": "1"})
+    monkeypatch.setattr(n, "genesis_bridge", lambda t: {"session_token": "S", "weise3_id": "W"})
+
+
+def test_no_wildcard_cors_on_login(server, fake_login):
     r = _post(server + "/eho6/login", {})
-    assert r.headers.get("Access-Control-Allow-Origin") != "*"
+    assert r.code == 200 and json.loads(r.read())["session_token"] == "S"
+    assert r.headers.get("Access-Control-Allow-Origin") is None
+
+
+def _post_h(url, headers):
+    req = Request(url, data=b"{}", headers={"Content-Type": "application/json", **headers}, method="POST")
+    try:
+        return urlopen(req, timeout=5)
+    except Exception as e:
+        return e
+
+
+def test_login_rejects_foreign_origin(server, fake_login):
+    assert _post_h(server + "/eho6/login", {"Origin": "https://evil.example"}).code == 403
+
+
+def test_login_rejects_rebinding_host(server, fake_login):
+    assert _post_h(server + "/eho6/login", {"Host": "evil.example:8091"}).code == 403
+
+
+def test_login_allows_local_origin_and_echoes_it(server, fake_login):
+    origin = "http://localhost:3000"
+    r = _post_h(server + "/eho6/login", {"Origin": origin})
+    assert r.code == 200 and r.headers.get("Access-Control-Allow-Origin") == origin
+
+
+@pytest.mark.parametrize("host,ok", [
+    ("localhost:8091", True), ("127.0.0.1", True), ("[::1]:8091", True), ("LOCALHOST", True),
+    ("localhost.evil.example", False), ("127.0.0.1.nip.io:8091", False), ("192.168.1.5:8091", False), ("", False),
+])
+def test_is_local_host(host, ok):
+    assert n._is_local_host(host) is ok
+
+
+def test_default_bind_is_loopback():
+    assert n.NodeState().bind == "127.0.0.1"
+
+
+# --- TLS: nikad CERT_NONE, nikad tihi HTTP -------------------------------------
+
+def test_http_request_never_disables_cert_verification(monkeypatch):
+    import ssl
+    seen = []
+
+    def fake_urlopen(req, timeout=None, context=None):
+        seen.append(context)
+        raise n.HTTPError(req.full_url, 500, "boom", {}, None) if len(seen) == 1 else AssertionError("retried")
+
+    monkeypatch.setattr(n, "urlopen", fake_urlopen)
+    with pytest.raises(n.HTTPError):
+        n._http_request("https://example.invalid/x")
+    assert len(seen) == 1
+    assert seen[0].verify_mode == ssl.CERT_REQUIRED and seen[0].check_hostname
+
+
+def _record_calls(monkeypatch, exc):
+    urls = []
+
+    def fake(url, **kw):
+        urls.append(url)
+        raise exc
+
+    monkeypatch.setattr(n, "_http_request", fake)
+    return urls
+
+
+def test_api_call_no_http_fallback_by_default(monkeypatch):
+    monkeypatch.setattr(n.STATE, "eu_https", "https://a")
+    monkeypatch.setattr(n.STATE, "eu_http", "http://b")
+    monkeypatch.setattr(n.STATE, "allow_insecure_http", False)
+    urls = _record_calls(monkeypatch, OSError("tls"))
+    with pytest.raises(OSError):
+        n._api_call("/p")
+    assert urls == ["https://a/p"]
+
+
+def test_api_call_http_error_never_falls_back(monkeypatch):
+    monkeypatch.setattr(n.STATE, "eu_https", "https://a")
+    monkeypatch.setattr(n.STATE, "allow_insecure_http", True)
+    urls = _record_calls(monkeypatch, n.HTTPError("https://a/p", 503, "x", {}, None))
+    with pytest.raises(n.HTTPError):
+        n._api_call("/p")
+    assert urls == ["https://a/p"]
+
+
+def test_api_call_http_fallback_only_when_opted_in(monkeypatch):
+    monkeypatch.setattr(n.STATE, "eu_https", "https://a")
+    monkeypatch.setattr(n.STATE, "eu_http", "http://b")
+    monkeypatch.setattr(n.STATE, "allow_insecure_http", True)
+    urls = _record_calls(monkeypatch, OSError("tls"))
+    with pytest.raises(OSError):
+        n._api_call("/p")
+    assert urls == ["https://a/p", "http://b/p"]
+
+
+def test_slow_login_does_not_block_health(monkeypatch):
+    """ThreadingHTTPServer: /health odgovara dok /eho6/login visi."""
+    from http.server import ThreadingHTTPServer
+    release = threading.Event()
+    monkeypatch.setattr(n, "genesis_login", lambda: (release.wait(10), {"token": ""})[1])
+    srv = ThreadingHTTPServer(("127.0.0.1", 0), n.EHO6Handler)
+    srv.daemon_threads = True
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    base = f"http://127.0.0.1:{srv.server_port}"
+    try:
+        threading.Thread(target=_post, args=(base + "/eho6/login", {}), daemon=True).start()
+        time.sleep(0.2)
+        t0 = time.time()
+        assert urlopen(base + "/health", timeout=3).status == 200
+        assert time.time() - t0 < 1.0
+    finally:
+        release.set()
+        srv.shutdown()
+
+
+def test_run_server_uses_threading_server():
+    src = (Path(__file__).parent.parent / "eho6_node.py").read_text()
+    assert "ThreadingHTTPServer((STATE.bind, port)" in src and '"0.0.0.0"' not in src
+
+
+def test_install_sh_key_permissions_and_no_insecure_transport():
+    sh = (Path(__file__).parent.parent / "install.sh").read_text()
+    assert 'chmod 700 "$EHO6_DIR"' in sh
+    assert "umask 077" in sh
+    assert "--insecure" not in sh and 'EU_BASE="$EU_HTTP"' not in sh
